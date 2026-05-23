@@ -361,6 +361,27 @@ export function StepStart({ state, dispatch, onNext }: StepStartProps) {
           <ArrowRight className="size-4" />
         </Button>
       </div>
+
+      {/* Early Access Promo */}
+      <div className="flex flex-col items-center text-center gap-4 pt-8 pb-4 border-t border-[var(--persona-border)] mt-4">
+        <div className="flex flex-col gap-2 max-w-md">
+          <h3 className="text-lg font-semibold text-foreground">
+            New portfolio designs are almost here.
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Our designers have been crafting stunning, modern templates that make your work look as good as it deserves. Sign up now to get early access + an exclusive launch discount.
+          </p>
+        </div>
+        <a
+          href="https://tally.so/r/D4ZJbZ"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--persona-accent)] text-[var(--persona-bg)] font-medium text-sm hover:bg-[var(--persona-accent)]/90 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[var(--persona-accent)]/20"
+        >
+          Get Early Access & Discount
+          <ArrowRight className="size-4" />
+        </a>
+      </div>
     </div>
   )
 }
