@@ -164,11 +164,6 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 | `/api/generate` | POST | Builds complete portfolio HTML from template |
 | `/api/deploy` | POST | Deploys portfolio to Vercel and returns live URL |
 
-## Built with v0
-
-This project was built with [v0](https://v0.app). You can continue developing by visiting:
-
-[Continue working on v0](https://v0.app/chat/projects/prj_Qmv1tsUcl01qYd1V7dVb4tcibrTI)
 
 ## License
 
