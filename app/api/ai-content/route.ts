@@ -48,7 +48,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 // Allowed domains for scraping (security: avoid SSRF)
-const ALLOWED_DOMAINS = [
+export const ALLOWED_DOMAINS = [
   "linkedin.com",
   "github.com",
   "medium.com",
@@ -59,19 +59,16 @@ const ALLOWED_DOMAINS = [
   "notion.site",
   "twitter.com",
   "x.com",
-  "blog.",
-  "portfolio.",
   "vercel.app",
 ];
 
-function isAllowedUrl(url: string): boolean {
+export function isAllowedUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-      return false;
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
     return ALLOWED_DOMAINS.some(
-      (domain) =>
-        parsed.hostname.includes(domain) || parsed.hostname.endsWith(domain),
+      (domain) => host === domain || host.endsWith("." + domain),
     );
   } catch {
     return false;
@@ -245,10 +242,28 @@ function extractJsonObject(text: string): string | null {
   return null;
 }
 
+const MAX_BODY_BYTES = 1_048_576; // ~1 MB
+
 export async function POST(request: Request) {
   try {
     const requestStartedAt = Date.now();
-    const data: AIContentRequest = await request.json();
+
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+      return Response.json({ error: "Payload too large" }, { status: 413 });
+    }
+
+    const rawBody = await request.text();
+    if (rawBody.length > MAX_BODY_BYTES) {
+      return Response.json({ error: "Payload too large" }, { status: 413 });
+    }
+
+    let data: AIContentRequest;
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    }
     const {
       targetRole,
       externalLinks = [],
@@ -601,9 +616,12 @@ Return JSON in exactly this format:
       return Response.json({ ...base2, resume: synth2 || undefined });
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to generate AI content";
-    return Response.json({ error: message }, { status: 500 });
+    const traceId = crypto.randomUUID();
+    console.error(`[ai-content] error [${traceId}]:`, err);
+    return Response.json(
+      { error: "Something went wrong", traceId },
+      { status: 500 }
+    );
   }
 }
 
