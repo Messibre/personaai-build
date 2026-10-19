@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server"
 
-function extractPageId(url: string): string | null {
+const MAX_BODY_BYTES = 1_048_576 // ~1 MB
+
+export function extractPageId(url: string): string | null {
   try {
-    const parsed = new URL(url)
-    if (!parsed.hostname.includes("notion.so") && !parsed.hostname.includes("notion.site")) {
+    let raw = url.trim()
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = "https://" + raw
+    const parsed = new URL(raw)
+    if (parsed.protocol !== "https:") return null
+    const host = parsed.hostname.toLowerCase()
+    const isNotionHost =
+      host === "notion.so" ||
+      host.endsWith(".notion.so") ||
+      host === "notion.site" ||
+      host.endsWith(".notion.site")
+    if (!isNotionHost) {
       return null
     }
     const pathParts = parsed.pathname.split("/").filter(Boolean)
@@ -26,8 +37,24 @@ function formatPageId(raw: string): string {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { url } = body
+    const contentLength = request.headers.get("content-length")
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 })
+    }
+
+    const rawBody = await request.text()
+    if (rawBody.length > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 })
+    }
+
+    let body: unknown
+    try {
+      body = JSON.parse(rawBody)
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+    }
+
+    const { url } = (body && typeof body === "object" ? body : {}) as { url?: unknown }
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ content: null, error: "URL is required" }, { status: 400 })
@@ -178,10 +205,11 @@ export async function POST(request: Request) {
       title: uniqueParts[0]?.substring(0, 100) || "Notion Page",
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to fetch Notion content"
+    const traceId = crypto.randomUUID()
+    console.error(`[notion] error [${traceId}]:`, err)
     return NextResponse.json(
-      { content: null, error: `Could not fetch Notion page: ${message}` },
-      { status: 200 }
+      { error: "Something went wrong", traceId },
+      { status: 500 }
     )
   }
 }
