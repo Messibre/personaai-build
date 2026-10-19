@@ -140,13 +140,17 @@ export async function POST(request: Request) {
     // Poll until READY (up to 90 seconds)
     const readyUrl = await waitForReady(deploymentId, token)
 
-    return Response.json({
-      success: true,
-      url: readyUrl || immediateUrl,
-      deploymentId,
-      projectName: safeName,
-      ready: !!readyUrl,
-    })
+    // return Response.json({
+    //   success: true,
+    //   url: readyUrl || immediateUrl,
+    //   deploymentId,
+    //   projectName: safeName,
+    //   ready: !!readyUrl,
+    // })
+    // Temporarily disabled until Lesson 14 adds login + rate limiting.
+
+    return Response.json({ error: "Deploy is temporarily disabled." }, { status: 404 })
+
   } catch (err) {
     const message = err instanceof Error ? err.message : "Deployment failed"
     return Response.json({ error: message }, { status: 500 })
