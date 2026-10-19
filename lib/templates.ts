@@ -16,9 +16,69 @@ interface TemplateData {
   targetRole?: string | null
 }
 
-function e(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+export function e(str: unknown): string {
+  if (typeof str !== "string") return ""
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
 }
+
+const DATA_IMAGE = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/
+
+export function safeUrl(input: unknown): string {
+  if (typeof input !== "string") return "#"
+  let raw = input.trim()
+  if (!raw) return "#"
+  // blog fields often come without a scheme ("mysite.com")
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = "https://" + raw
+  try {
+    const url = new URL(raw)
+    if (url.protocol !== "https:") return "#" // blocks javascript:, data:, file:, http:
+    return e(url.href) // escape again for safety
+  } catch {
+    return "#"
+  }
+}
+
+export function safeImageSrc(input: unknown): string {
+  if (typeof input !== "string") return ""
+  const v = input.trim()
+  if (v.length < 3_000_000 && DATA_IMAGE.test(v)) return e(v) // uploaded photo
+  const u = safeUrl(v)
+  return u === "#" ? "" : u // GitHub avatar etc.
+}
+
+const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{3,8}$/
+
+export function safeColor(color: unknown, fallback = "#0ea5e9"): string {
+  if (typeof color === "string" && HEX_COLOR_REGEX.test(color.trim())) {
+    return color.trim()
+  }
+  return fallback
+}
+
+export function getColorScheme(scheme: unknown, fallbackScheme: ColorScheme = "ocean") {
+  if (typeof scheme === "string" && scheme in COLOR_SCHEMES) {
+    const item = COLOR_SCHEMES[scheme as ColorScheme]
+    return {
+      label: item.label,
+      primary: safeColor(item.primary),
+      secondary: safeColor(item.secondary),
+      accent: safeColor(item.accent),
+    }
+  }
+  const fallback = COLOR_SCHEMES[fallbackScheme] || COLOR_SCHEMES.ocean
+  return {
+    label: fallback.label,
+    primary: safeColor(fallback.primary),
+    secondary: safeColor(fallback.secondary),
+    accent: safeColor(fallback.accent),
+  }
+}
+
 
 /** Strip common markdown syntax so raw README text renders cleanly as plain text */
 function stripMd(text: string): string {
@@ -533,7 +593,7 @@ function buildProjects(repos: GitHubRepo[], accent: string, aiProjects?: AIProje
       <div class="project-meta">
         ${p.language ? `<span class="project-lang">${e(p.language)}</span>` : ""}
         <div class="project-links">
-          <a href="${p.url}" target="_blank" rel="noopener" class="project-link gh" aria-label="View ${e(p.name)} on GitHub">GitHub</a>
+          <a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="project-link gh" aria-label="View ${e(p.name)} on GitHub">GitHub</a>
         </div>
       </div>
     </div>`
@@ -568,8 +628,8 @@ function buildProjects(repos: GitHubRepo[], accent: string, aiProjects?: AIProje
         ${r.language ? `<span class="project-lang">${e(r.language)}</span>` : ""}
         ${r.topics?.slice(0, 1).map(t => `<span class="project-lang" style="opacity:0.55">${e(t)}</span>`).join("") || ""}
         <div class="project-links">
-          ${r.homepage ? `<a href="${r.homepage}" target="_blank" rel="noopener" class="project-link" aria-label="Live demo for ${e(r.name)}">Live</a>` : ""}
-          <a href="${r.html_url}" target="_blank" rel="noopener" class="project-link gh" aria-label="View ${e(r.name)} on GitHub">GitHub</a>
+          ${r.homepage && safeUrl(r.homepage) !== "#" ? `<a href="${safeUrl(r.homepage)}" target="_blank" rel="noopener" class="project-link" aria-label="Live demo for ${e(r.name)}">Live</a>` : ""}
+          <a href="${safeUrl(r.html_url)}" target="_blank" rel="noopener" class="project-link gh" aria-label="View ${e(r.name)} on GitHub">GitHub</a>
         </div>
       </div>
     </div>`
@@ -635,8 +695,8 @@ function buildAbout(profile: GitHubProfile, aiBio: string | null, accent: string
         ${facts.map(f => `<span role="listitem" class="about-fact" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;background:var(--surface,rgba(255,255,255,0.04));border:1px solid var(--border,rgba(255,255,255,0.08));font-size:13px;color:var(--text,#e8e8ef)">${f}</span>`).join("")}
       </div>` : ""}
       <div style="display:flex;gap:12px;flex-wrap:wrap" class="reveal">
-        ${profile.blog ? `<a href="${profile.blog.startsWith("http") ? profile.blog : "https://" + profile.blog}" target="_blank" rel="noopener" style="padding:10px 22px;border:1.5px solid ${accent}40;color:${accent};border-radius:10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">&#127758; Website</a>` : ""}
-        <a href="${profile.html_url}" target="_blank" rel="noopener" class="about-gh-link" style="padding:10px 22px;border:1.5px solid var(--border,rgba(255,255,255,0.1));color:var(--text,#e8e8ef);border-radius:10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">&#128196; GitHub Profile</a>
+        ${profile.blog && safeUrl(profile.blog) !== "#" ? `<a href="${safeUrl(profile.blog)}" target="_blank" rel="noopener" style="padding:10px 22px;border:1.5px solid ${accent}40;color:${accent};border-radius:10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">&#127758; Website</a>` : ""}
+        <a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" class="about-gh-link" style="padding:10px 22px;border:1.5px solid var(--border,rgba(255,255,255,0.1));color:var(--text,#e8e8ef);border-radius:10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">&#128196; GitHub Profile</a>
       </div>
     </div>
   </section>`
@@ -654,12 +714,22 @@ const SOCIAL_SVGS: Record<string, string> = {
 function buildContact(profile: GitHubProfile, accent: string, socialLinks?: SocialLinks): string {
   // Build social icon row
   const icons: string[] = []
-  icons.push(`<a href="${profile.html_url}" target="_blank" rel="noopener" class="social-link" aria-label="GitHub profile" title="GitHub">${SOCIAL_SVGS.github}</a>`)
-  if (socialLinks?.linkedin) icons.push(`<a href="${socialLinks.linkedin}" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn profile" title="LinkedIn">${SOCIAL_SVGS.linkedin}</a>`)
-  if (socialLinks?.twitter) icons.push(`<a href="${socialLinks.twitter}" target="_blank" rel="noopener" class="social-link" aria-label="X / Twitter" title="X / Twitter">${SOCIAL_SVGS.twitter}</a>`)
-  if (socialLinks?.substack) icons.push(`<a href="${socialLinks.substack}" target="_blank" rel="noopener" class="social-link" aria-label="Substack" title="Substack">${SOCIAL_SVGS.substack}</a>`)
+  if (profile.html_url && safeUrl(profile.html_url) !== "#") {
+    icons.push(`<a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" class="social-link" aria-label="GitHub profile" title="GitHub">${SOCIAL_SVGS.github}</a>`)
+  }
+  if (socialLinks?.linkedin && safeUrl(socialLinks.linkedin) !== "#") {
+    icons.push(`<a href="${safeUrl(socialLinks.linkedin)}" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn profile" title="LinkedIn">${SOCIAL_SVGS.linkedin}</a>`)
+  }
+  if (socialLinks?.twitter && safeUrl(socialLinks.twitter) !== "#") {
+    icons.push(`<a href="${safeUrl(socialLinks.twitter)}" target="_blank" rel="noopener" class="social-link" aria-label="X / Twitter" title="X / Twitter">${SOCIAL_SVGS.twitter}</a>`)
+  }
+  if (socialLinks?.substack && safeUrl(socialLinks.substack) !== "#") {
+    icons.push(`<a href="${safeUrl(socialLinks.substack)}" target="_blank" rel="noopener" class="social-link" aria-label="Substack" title="Substack">${SOCIAL_SVGS.substack}</a>`)
+  }
   const blogUrl = socialLinks?.blog || profile.blog
-  if (blogUrl) icons.push(`<a href="${blogUrl.startsWith("http") ? blogUrl : "https://" + blogUrl}" target="_blank" rel="noopener" class="social-link" aria-label="Personal website" title="Website">${SOCIAL_SVGS.blog}</a>`)
+  if (blogUrl && safeUrl(blogUrl) !== "#") {
+    icons.push(`<a href="${safeUrl(blogUrl)}" target="_blank" rel="noopener" class="social-link" aria-label="Personal website" title="Website">${SOCIAL_SVGS.blog}</a>`)
+  }
 
   // Email from GitHub API isn't always available, so we fall back to mailto: pattern
   const emailHint = `${profile.username}@users.noreply.github.com`
@@ -678,7 +748,7 @@ function buildContact(profile: GitHubProfile, accent: string, socialLinks?: Soci
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Copy email to clipboard
         </button>
-        <a href="${profile.html_url}" target="_blank" rel="noopener" style="padding:14px 36px;background:${accent};color:#000;border-radius:12px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px" aria-label="View GitHub profile">
+        <a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" style="padding:14px 36px;background:${accent};color:#000;border-radius:12px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px" aria-label="View GitHub profile">
           ${SOCIAL_SVGS.github} View GitHub Profile
         </a>
       </div>
@@ -696,6 +766,9 @@ function shell(accent: string, extraStyles: string, bodyContent: string, name: s
   const safeDescription = e(description)
   const title = `${e(name)} - Portfolio`
   const updatedDate = new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  const safeProfileUrl = safeUrl(profileUrl)
+  const safePhotoUrl = safeImageSrc(photoUrl)
+  const safeAccent = safeColor(accent)
 
   // JSON-LD Person schema for ATS / AI scrapers
   const jsonLd = JSON.stringify({
@@ -703,13 +776,13 @@ function shell(accent: string, extraStyles: string, bodyContent: string, name: s
     "@type": "Person",
     "name": name,
     "description": bio || description,
-    "url": profileUrl || "",
-    "image": photoUrl || "",
+    "url": safeProfileUrl !== "#" ? safeProfileUrl : "",
+    "image": safePhotoUrl || "",
     "sameAs": [
-      profileUrl,
-      socialLinks?.linkedin,
-      socialLinks?.twitter,
-      socialLinks?.blog,
+      safeProfileUrl !== "#" ? safeProfileUrl : null,
+      socialLinks?.linkedin && safeUrl(socialLinks.linkedin) !== "#" ? safeUrl(socialLinks.linkedin) : null,
+      socialLinks?.twitter && safeUrl(socialLinks.twitter) !== "#" ? safeUrl(socialLinks.twitter) : null,
+      socialLinks?.blog && safeUrl(socialLinks.blog) !== "#" ? safeUrl(socialLinks.blog) : null,
     ].filter(Boolean),
     "knowsAbout": skills || [],
   })
@@ -728,16 +801,16 @@ function shell(accent: string, extraStyles: string, bodyContent: string, name: s
 <meta property="og:type" content="website">
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${safeDescription}">
-${photoUrl ? `<meta property="og:image" content="${photoUrl}">` : ""}
+${safePhotoUrl ? `<meta property="og:image" content="${safePhotoUrl}">` : ""}
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${safeDescription}">
-${photoUrl ? `<meta name="twitter:image" content="${photoUrl}">` : ""}
+${safePhotoUrl ? `<meta name="twitter:image" content="${safePhotoUrl}">` : ""}
 
 <!-- Theme Color -->
-<meta name="theme-color" content="${accent}">
+<meta name="theme-color" content="${safeAccent}">
 
 <!-- Preconnect for performance -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -746,15 +819,15 @@ ${photoUrl ? `<meta name="twitter:image" content="${photoUrl}">` : ""}
 <link rel="preconnect" href="https://github-readme-streak-stats.herokuapp.com">
 
 <!-- Favicon (generated from accent color) -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='${encodeURIComponent(accent)}'/><text y='.9em' x='50' text-anchor='middle' font-size='70' fill='white'>${e(name.charAt(0).toUpperCase())}</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='${encodeURIComponent(safeAccent)}'/><text y='.9em' x='50' text-anchor='middle' font-size='70' fill='white'>${e(name.charAt(0).toUpperCase())}</text></svg>">
 
 <!-- JSON-LD structured data -->
-<script type="application/ld+json">${jsonLd}<\/script>
+<script type="application/ld+json">${jsonLd.replace(/<\/script/gi, "<\\/script")}<\/script>
 
 <style>
-  .skip-link { position:absolute; top:-100px; left:16px; padding:8px 16px; background:${accent}; color:#000; font-weight:700; font-size:14px; border-radius:4px; z-index:9999; transition:top .2s; }
+  .skip-link { position:absolute; top:-100px; left:16px; padding:8px 16px; background:${safeAccent}; color:#000; font-weight:700; font-size:14px; border-radius:4px; z-index:9999; transition:top .2s; }
   .skip-link:focus { top:8px; }
-  ${baseStyles(accent)}${extraStyles}
+  ${baseStyles(safeAccent)}${extraStyles}
 </style>
 </head>
 <body>
@@ -782,11 +855,11 @@ function buildFooter(name: string, accent: string): string {
 /* ===== TEMPLATE: BOLD PORTRAIT ===== */
 function buildBoldPortrait(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
 
   const extra = `
     .hero { min-height: 100vh; display: flex; align-items: center; position: relative; overflow: hidden; }
@@ -844,11 +917,11 @@ function buildBoldPortrait(data: TemplateData): string {
 /* ===== TEMPLATE: TYPOGRAPHIC ===== */
 function buildTypographic(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
   const role = langs.length > 0 ? `${langs[0]} Developer` : "Developer"
 
   const extra = `
@@ -887,11 +960,11 @@ function buildTypographic(data: TemplateData): string {
 /* ===== TEMPLATE: SPLIT EDITORIAL ===== */
 function buildSplitEditorial(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
 
   const extra = `
     .hero { min-height: 100vh; display: flex; }
@@ -942,11 +1015,11 @@ function buildSplitEditorial(data: TemplateData): string {
 /* ===== TEMPLATE: PASTEL CREATIVE (now dark premium) ===== */
 function buildPastelCreative(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
 
   const extra = `
     .hero { min-height: 100vh; display: flex; align-items: center; position: relative; padding: 120px 24px 80px; }
@@ -1007,11 +1080,11 @@ function buildPastelCreative(data: TemplateData): string {
 /* ===== TEMPLATE: DESIGNER CODER ===== */
 function buildDesignerCoder(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
 
   const extra = `
     .hero { min-height: 100vh; display: flex; position: relative; }
@@ -1062,11 +1135,11 @@ function buildDesignerCoder(data: TemplateData): string {
 /* ===== TEMPLATE: MINIMAL CLEAN (now premium dark minimal) ===== */
 function buildMinimalClean(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
 
   const extra = `
     .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
@@ -1102,11 +1175,11 @@ function buildMinimalClean(data: TemplateData): string {
         ${(aiProjects && aiProjects.length > 0 ? aiProjects.slice(0, 8).map(p => `
           <div class="project-item reveal">
             <div><h3>${e(p.name)}</h3><p>${e(stripMd(p.description))}</p></div>
-            <a href="${p.url}" target="_blank" rel="noopener">&rarr;</a>
+            <a href="${safeUrl(p.url)}" target="_blank" rel="noopener">&rarr;</a>
           </div>`) : repos.filter(r => !r.fork).slice(0, 8).map(r => `
           <div class="project-item reveal">
             <div><h3>${e(r.name)}</h3><p>${e(stripMd(r.description || "A carefully crafted project."))}</p></div>
-            <a href="${r.html_url}" target="_blank" rel="noopener">&rarr;</a>
+            <a href="${safeUrl(r.html_url)}" target="_blank" rel="noopener">&rarr;</a>
           </div>`)).join("")}
       </div>
     </div>
@@ -1127,11 +1200,11 @@ function buildMinimalClean(data: TemplateData): string {
 /* ===== TEMPLATE: BRUTALIST ===== */
 function buildBrutalist(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
   const role = langs.length > 0 ? `${langs[0]} Dev` : "Developer"
 
   const extra = `
@@ -1206,11 +1279,11 @@ function buildBrutalist(data: TemplateData): string {
 /* ===== TEMPLATE: GLASSMORPHISM ===== */
 function buildGlassmorphism(data: TemplateData): string {
   const { profile, repos, config, photoUrl, aiBio, aiProjects, heroTagline, targetRole } = data
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme]
+  const c = getColorScheme(config.colorScheme)
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const name = profile.name || profile.username
-  const img = photoUrl || profile.avatar_url
+  const img = safeImageSrc(photoUrl || profile.avatar_url)
   const role = langs.length > 0 ? `${langs[0]} Developer` : "Software Developer"
 
   const extra = `
@@ -1272,7 +1345,7 @@ function buildGlassmorphism(data: TemplateData): string {
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:24px">
           ${profile.location ? `<span style="font-size:13px;color:${c.accent}">&#9679; ${e(profile.location)}</span>` : ""}
           ${profile.company ? `<span style="font-size:13px;color:${c.accent}">&#9679; ${e(profile.company)}</span>` : ""}
-          ${profile.blog ? `<a href="${profile.blog.startsWith("http") ? profile.blog : "https://" + profile.blog}" target="_blank" style="font-size:13px;color:${c.accent}">&#9679; ${e(profile.blog)}</a>` : ""}
+          ${profile.blog && safeUrl(profile.blog) !== "#" ? `<a href="${safeUrl(profile.blog)}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent}">&#9679; ${e(profile.blog)}</a>` : ""}
         </div>
       </div>
     </div>
@@ -1293,7 +1366,7 @@ function buildGlassmorphism(data: TemplateData): string {
           <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:16px">${e(stripMd(p.description))}</p>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             ${p.language ? `<span style="font-size:11px;padding:3px 12px;border-radius:20px;background:${c.accent}12;color:${c.accent};border:1px solid ${c.accent}25">${e(p.language)}</span>` : ""}
-            <a href="${p.url}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent};font-weight:500;margin-left:auto">View &rarr;</a>
+            <a href="${safeUrl(p.url)}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent};font-weight:500;margin-left:auto">View &rarr;</a>
           </div>
         </div>`) : repos.filter(r => !r.fork).slice(0, 6).map(r => {
           const desc = r.description && r.description.trim() ? stripMd(r.description) : smartRepoDescription(r.name, r.language)
@@ -1306,7 +1379,7 @@ function buildGlassmorphism(data: TemplateData): string {
           <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:16px">${e(desc)}</p>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             ${r.language ? `<span style="font-size:11px;padding:3px 12px;border-radius:20px;background:${c.accent}12;color:${c.accent};border:1px solid ${c.accent}25">${e(r.language)}</span>` : ""}
-            <a href="${r.html_url}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent};font-weight:500;margin-left:auto">View &rarr;</a>
+            <a href="${safeUrl(r.html_url)}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent};font-weight:500;margin-left:auto">View &rarr;</a>
           </div>
         </div>`
         })).join("")}
@@ -1330,13 +1403,13 @@ function buildGlassmorphism(data: TemplateData): string {
 function buildTerminal(data: TemplateData): string {
   const { profile, config, aiBio, aiProjects } = data
   const repos = data.repos
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme] || COLOR_SCHEMES.forest
+  const c = getColorScheme(config.colorScheme, "forest")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
   const bio = aiBio || profile.bio || "Building things that matter."
   const langs = getLangs(repos)
   const topics = getTopics(repos)
-  const img = data.photoUrl || profile.avatar_url
+  const img = safeImageSrc(data.photoUrl || profile.avatar_url)
 
   const extra = `
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600;700&display=swap');
@@ -1418,7 +1491,7 @@ function buildTerminal(data: TemplateData): string {
   <main>
   ${config.sections.includes("about") ? `<section id="about" class="section"><p class="section-heading reveal">about_me</p><p style="font-size:13px;color:#888;line-height:1.9;max-width:640px" class="reveal">${e(bio)}</p></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><p class="section-heading reveal">skills_and_tools</p><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></section>` : ""}
-  ${config.sections.includes("projects") ? `<section id="projects" class="section"><p class="section-heading reveal">projects</p>${projects.map(p=>`<div class="project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="project-name">${e(p.name)}</p>${p.stars>0?`<span style="font-size:11px;color:${c.accent}60" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p class="project-desc">${e(stripMd(p.description))}</p><div class="project-meta">${p.language?`<span class="project-lang">${e(p.language)}</span>`:""}<a href="${p.url}" target="_blank" rel="noopener" class="project-link" aria-label="View ${e(p.name)} on GitHub">open &rarr;</a></div></div>`).join("")}</section>` : ""}
+  ${config.sections.includes("projects") ? `<section id="projects" class="section"><p class="section-heading reveal">projects</p>${projects.map(p=>`<div class="project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="project-name">${e(p.name)}</p>${p.stars>0?`<span style="font-size:11px;color:${c.accent}60" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p class="project-desc">${e(stripMd(p.description))}</p><div class="project-meta">${p.language?`<span class="project-lang">${e(p.language)}</span>`:""}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="project-link" aria-label="View ${e(p.name)} on GitHub">open &rarr;</a></div></div>`).join("")}</section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}
   ${config.sections.includes("github-stats") ? buildGitHubStats(profile, c.accent, repos) : ""}
   ${config.sections.includes("testimonials") ? buildTestimonials(c.accent) : ""}
@@ -1436,13 +1509,13 @@ function buildTerminal(data: TemplateData): string {
 function buildLiquidGlass(data: TemplateData): string {
   const { profile, config, aiBio, aiProjects } = data
   const repos = data.repos
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme] || COLOR_SCHEMES.arctic
+  const c = getColorScheme(config.colorScheme, "arctic")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
   const bio = aiBio || profile.bio || "Crafting digital experiences."
   const langs = getLangs(repos)
   const topics = getTopics(repos)
-  const img = data.photoUrl || profile.avatar_url
+  const img = safeImageSrc(data.photoUrl || profile.avatar_url)
 
   const extra = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
@@ -1520,7 +1593,7 @@ function buildLiquidGlass(data: TemplateData): string {
   <main>
   ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}&rsquo;s story</h2><div class="glass-strong reveal" style="padding:32px;max-width:680px"><p style="color:rgba(255,255,255,0.65);font-size:15px;line-height:1.8">${e(bio)}</p></div></div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">Skills</p><h2 class="section-title reveal">Tech Stack</h2><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section>` : ""}
-  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Work</p><h2 class="section-title reveal">Featured Projects</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">${projects.map(p=>`<div class="glass project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><h3 style="font-size:16px;font-weight:700;color:#fff">${e(p.name)}</h3>${p.stars>0?`<span style="font-size:12px;color:${c.accent};font-weight:600" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:16px">${e(stripMd(p.description))}</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${p.language?`<span style="font-size:11px;padding:3px 12px;border-radius:50px;background:${c.accent}12;color:${c.accent};border:1px solid ${c.accent}20">${e(p.language)}</span>`:""}<a href="${p.url}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent};font-weight:600;margin-left:auto" aria-label="View ${e(p.name)} on GitHub">View &rarr;</a></div></div>`).join("")}</div></div></section>` : ""}
+  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Work</p><h2 class="section-title reveal">Featured Projects</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">${projects.map(p=>`<div class="glass project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><h3 style="font-size:16px;font-weight:700;color:#fff">${e(p.name)}</h3>${p.stars>0?`<span style="font-size:12px;color:${c.accent};font-weight:600" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:16px">${e(stripMd(p.description))}</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${p.language?`<span style="font-size:11px;padding:3px 12px;border-radius:50px;background:${c.accent}12;color:${c.accent};border:1px solid ${c.accent}20">${e(p.language)}</span>`:""}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent};font-weight:600;margin-left:auto" aria-label="View ${e(p.name)} on GitHub">View &rarr;</a></div></div>`).join("")}</div></div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}
   ${config.sections.includes("github-stats") ? buildGitHubStats(profile, c.accent, repos) : ""}
   ${config.sections.includes("testimonials") ? buildTestimonials(c.accent) : ""}
@@ -1538,13 +1611,13 @@ function buildLiquidGlass(data: TemplateData): string {
 function buildCyberpunkNoir(data: TemplateData): string {
   const { profile, config, aiBio, aiProjects } = data
   const repos = data.repos
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme] || COLOR_SCHEMES.rose
+  const c = getColorScheme(config.colorScheme, "rose")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
   const bio = aiBio || profile.bio || "Building the future, one line at a time."
   const langs = getLangs(repos)
   const topics = getTopics(repos)
-  const img = data.photoUrl || profile.avatar_url
+  const img = safeImageSrc(data.photoUrl || profile.avatar_url)
 
   const extra = `
     @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;600&display=swap');
@@ -1634,7 +1707,7 @@ function buildCyberpunkNoir(data: TemplateData): string {
   <main>
   ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">about</p><h2 class="section-title reveal">Who I Am</h2><p style="font-size:15px;color:#888;line-height:1.85;max-width:680px" class="reveal">${e(bio)}</p></div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">skills</p><h2 class="section-title reveal">Arsenal</h2><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section>` : ""}
-  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">projects</p><h2 class="section-title reveal">Missions Completed</h2>${projects.map(p=>`<div class="project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="project-name">${e(p.name)}</p>${p.stars>0?`<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${c.accent}60" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p class="project-desc">${e(stripMd(p.description))}</p><div class="project-meta">${p.language?`<span class="project-lang">${e(p.language)}</span>`:""}<a href="${p.url}" target="_blank" rel="noopener" class="project-link" aria-label="Access ${e(p.name)}">access &rarr;</a></div></div>`).join("")}</div></section>` : ""}
+  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">projects</p><h2 class="section-title reveal">Missions Completed</h2>${projects.map(p=>`<div class="project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="project-name">${e(p.name)}</p>${p.stars>0?`<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${c.accent}60" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p class="project-desc">${e(stripMd(p.description))}</p><div class="project-meta">${p.language?`<span class="project-lang">${e(p.language)}</span>`:""}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="project-link" aria-label="Access ${e(p.name)}">access &rarr;</a></div></div>`).join("")}</div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}
   ${config.sections.includes("github-stats") ? buildGitHubStats(profile, c.accent, repos) : ""}
   ${config.sections.includes("testimonials") ? buildTestimonials(c.accent) : ""}
@@ -1652,13 +1725,13 @@ function buildCyberpunkNoir(data: TemplateData): string {
 function buildBentoGrid(data: TemplateData): string {
   const { profile, config, aiBio, aiProjects } = data
   const repos = data.repos
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme] || COLOR_SCHEMES.midnight
+  const c = getColorScheme(config.colorScheme, "midnight")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
   const bio = aiBio || profile.bio || "Building delightful products."
   const langs = getLangs(repos)
   const topics = getTopics(repos)
-  const img = data.photoUrl || profile.avatar_url
+  const img = safeImageSrc(data.photoUrl || profile.avatar_url)
 
   const extra = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -1736,7 +1809,7 @@ function buildBentoGrid(data: TemplateData): string {
         <div style="font-size:12px;color:#666;margin-top:4px">Followers</div>
       </div>
       ${config.sections.includes("skills") ? `<div class="bento-cell bento-skills hero-anim"><p class="section-label">Stack</p><div style="margin-top:8px">${[...langs,...topics].slice(0,14).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div>` : ""}
-      ${config.sections.includes("projects") ? projects.map(p=>`<div class="bento-cell bento-project reveal"><a href="${p.url}" target="_blank" rel="noopener" aria-label="View ${e(p.name)}"><p class="proj-name">${e(p.name)}</p></a><p class="proj-desc">${e(stripMd(p.description))}</p><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">${p.language?`<span class="proj-lang">${e(p.language)}</span>`:`<span></span>`}${p.stars>0?`<span style="font-size:11px;color:${c.accent}70" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div></div>`).join("") : ""}
+      ${config.sections.includes("projects") ? projects.map(p=>`<div class="bento-cell bento-project reveal"><a href="${safeUrl(p.url)}" target="_blank" rel="noopener" aria-label="View ${e(p.name)}"><p class="proj-name">${e(p.name)}</p></a><p class="proj-desc">${e(stripMd(p.description))}</p><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">${p.language?`<span class="proj-lang">${e(p.language)}</span>`:`<span></span>`}${p.stars>0?`<span style="font-size:11px;color:${c.accent}70" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div></div>`).join("") : ""}
     </div>
   </div>
   </section>
@@ -1758,13 +1831,13 @@ function buildBentoGrid(data: TemplateData): string {
 function buildSpotlightDark(data: TemplateData): string {
   const { profile, config, aiBio, aiProjects } = data
   const repos = data.repos
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme] || COLOR_SCHEMES.ocean
+  const c = getColorScheme(config.colorScheme, "ocean")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
   const bio = aiBio || profile.bio || "Focused on building great software."
   const langs = getLangs(repos)
   const topics = getTopics(repos)
-  const img = data.photoUrl || profile.avatar_url
+  const img = safeImageSrc(data.photoUrl || profile.avatar_url)
 
   const extra = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -1856,7 +1929,7 @@ function buildSpotlightDark(data: TemplateData): string {
   <div class="divider"></div>
   ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}</h2><p style="font-size:16px;color:#666;line-height:1.85;max-width:680px" class="reveal">${e(bio)}</p></div></section><div class="divider"></div>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">Skills</p><h2 class="section-title reveal">What I work with</h2><div class="skill-wrap reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section><div class="divider"></div>` : ""}
-  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Projects</p><h2 class="section-title reveal">Selected Work</h2><div role="list">${projects.map((p,i)=>`<div class="project-row reveal" role="listitem"><span class="proj-num" aria-hidden="true">${String(i+1).padStart(2,"0")}</span><div><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p>${p.language?`<span class="proj-lang">${e(p.language)}</span>`:""}</div><a href="${p.url}" target="_blank" rel="noopener" class="proj-link" aria-label="View ${e(p.name)}">View &rarr;</a></div>`).join("")}</div></div></section><div class="divider"></div>` : ""}
+  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Projects</p><h2 class="section-title reveal">Selected Work</h2><div role="list">${projects.map((p,i)=>`<div class="project-row reveal" role="listitem"><span class="proj-num" aria-hidden="true">${String(i+1).padStart(2,"0")}</span><div><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p>${p.language?`<span class="proj-lang">${e(p.language)}</span>`:""}</div><a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="proj-link" aria-label="View ${e(p.name)}">View &rarr;</a></div>`).join("")}</div></div></section><div class="divider"></div>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}
   ${config.sections.includes("github-stats") ? buildGitHubStats(profile, c.accent, repos) : ""}
   ${config.sections.includes("testimonials") ? buildTestimonials(c.accent) : ""}
@@ -1883,13 +1956,13 @@ function buildSpotlightDark(data: TemplateData): string {
 function buildSwissEditorial(data: TemplateData): string {
   const { profile, config, aiBio, aiProjects } = data
   const repos = data.repos
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme] || COLOR_SCHEMES.ember
+  const c = getColorScheme(config.colorScheme, "ember")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
   const bio = aiBio || profile.bio || "Precision engineering for the web."
   const langs = getLangs(repos)
   const topics = getTopics(repos)
-  const img = data.photoUrl || profile.avatar_url
+  const img = safeImageSrc(data.photoUrl || profile.avatar_url)
   const firstName = name.split(" ")[0].toUpperCase()
   const lastName = (name.split(" ").slice(1).join(" ") || "").toUpperCase()
 
@@ -1987,11 +2060,11 @@ function buildSwissEditorial(data: TemplateData): string {
   <main>
   ${config.sections.includes("about") ? `<section id="about" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">01</div><div><p class="section-label reveal">About</p><h2 class="section-title reveal">The human<br>behind the code</h2><p style="font-size:15px;color:#888;line-height:1.85;max-width:600px" class="reveal">${e(bio)}</p></div></div></div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">02</div><div><p class="section-label reveal">Skills</p><h2 class="section-title reveal">Toolkit</h2><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></div></div></section>` : ""}
-  ${config.sections.includes("projects") ? `<section id="projects" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">03</div><div><p class="section-label reveal">Projects</p><h2 class="section-title reveal">Selected<br>Work</h2><div role="list">${projects.map((p,i)=>`<div class="project-item reveal" role="listitem"><span class="proj-num" aria-hidden="true">${String(i+1).padStart(2,"0")}</span><div style="flex:1"><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p>${p.language?`<span class="proj-lang">${e(p.language)}</span>`:""}</div><a href="${p.url}" target="_blank" rel="noopener" class="proj-link" aria-label="Open ${e(p.name)}">Open &rarr;</a></div>`).join("")}</div></div></div></div></section>` : ""}
+  ${config.sections.includes("projects") ? `<section id="projects" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">03</div><div><p class="section-label reveal">Projects</p><h2 class="section-title reveal">Selected<br>Work</h2><div role="list">${projects.map((p,i)=>`<div class="project-item reveal" role="listitem"><span class="proj-num" aria-hidden="true">${String(i+1).padStart(2,"0")}</span><div style="flex:1"><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p>${p.language?`<span class="proj-lang">${e(p.language)}</span>`:""}</div><a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="proj-link" aria-label="Open ${e(p.name)}">Open &rarr;</a></div>`).join("")}</div></div></div></div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}
   ${config.sections.includes("github-stats") ? buildGitHubStats(profile, c.accent, repos) : ""}
   ${config.sections.includes("testimonials") ? buildTestimonials(c.accent) : ""}
-  ${config.sections.includes("contact") ? `<section id="contact" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">04</div><div><p class="section-label reveal">Contact</p><h2 class="section-title reveal">Let&rsquo;s<br>build together</h2><div style="display:flex;gap:12px;flex-wrap:wrap" class="reveal"><a href="${profile.html_url}" target="_blank" rel="noopener" style="padding:14px 28px;background:#111;color:#f5f5f0;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase" aria-label="GitHub profile">GitHub</a>${data.socialLinks?.linkedin?`<a href="${data.socialLinks.linkedin}" target="_blank" rel="noopener" style="padding:14px 28px;border:2px solid #111;color:#111;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase" aria-label="LinkedIn profile">LinkedIn</a>`:""}</div></div></div></div></section>` : ""}
+  ${config.sections.includes("contact") ? `<section id="contact" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">04</div><div><p class="section-label reveal">Contact</p><h2 class="section-title reveal">Let&rsquo;s<br>build together</h2><div style="display:flex;gap:12px;flex-wrap:wrap" class="reveal"><a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" style="padding:14px 28px;background:#111;color:#f5f5f0;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase" aria-label="GitHub profile">GitHub</a>${data.socialLinks?.linkedin && safeUrl(data.socialLinks.linkedin) !== "#" ? `<a href="${safeUrl(data.socialLinks.linkedin)}" target="_blank" rel="noopener" style="padding:14px 28px;border:2px solid #111;color:#111;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase" aria-label="LinkedIn profile">LinkedIn</a>` : ""}</div></div></div></div></section>` : ""}
   </main>
   <footer class="footer" role="contentinfo"><a href="#home" style="color:${c.accent};font-weight:700;letter-spacing:2px;text-transform:uppercase;font-size:11px">${e(name)}</a> &nbsp;|&nbsp; &copy; ${new Date().getFullYear()} &nbsp;|&nbsp; Built with <a href="https://personaai.vercel.app" target="_blank" rel="noopener" style="color:${c.accent}">PersonaAI</a></footer>`
 
@@ -2002,13 +2075,13 @@ function buildSwissEditorial(data: TemplateData): string {
 function buildGradientAurora(data: TemplateData): string {
   const { profile, config, aiBio, aiProjects } = data
   const repos = data.repos
-  const c = COLOR_SCHEMES[config.colorScheme as ColorScheme] || COLOR_SCHEMES.lavender
+  const c = getColorScheme(config.colorScheme, "lavender")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
   const bio = aiBio || profile.bio || "Creating beautiful digital experiences."
   const langs = getLangs(repos)
   const topics = getTopics(repos)
-  const img = data.photoUrl || profile.avatar_url
+  const img = safeImageSrc(data.photoUrl || profile.avatar_url)
 
   const extra = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@400;600;700;800&display=swap');
@@ -2086,7 +2159,7 @@ function buildGradientAurora(data: TemplateData): string {
   <main>
   ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}&rsquo;s story</h2><p style="font-size:15px;color:rgba(255,255,255,0.45);line-height:1.85;max-width:640px;margin:0 auto;text-align:center" class="reveal">${e(bio)}</p></div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">Stack</p><h2 class="section-title reveal">Tools &amp; Technologies</h2><div style="text-align:center" class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section>` : ""}
-  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Work</p><h2 class="section-title reveal">Featured Projects</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">${projects.map(p=>`<div class="project-card reveal"><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p><div style="display:flex;align-items:center;justify-content:space-between">${p.language?`<span class="proj-lang">${e(p.language)}</span>`:`<span></span>`}<a href="${p.url}" target="_blank" rel="noopener" class="proj-link" aria-label="View ${e(p.name)}">View &rarr;</a></div></div>`).join("")}</div></div></section>` : ""}
+  ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Work</p><h2 class="section-title reveal">Featured Projects</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">${projects.map(p=>`<div class="project-card reveal"><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p><div style="display:flex;align-items:center;justify-content:space-between">${p.language?`<span class="proj-lang">${e(p.language)}</span>`:`<span></span>`}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="proj-link" aria-label="View ${e(p.name)}">View &rarr;</a></div></div>`).join("")}</div></div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}
   ${config.sections.includes("github-stats") ? buildGitHubStats(profile, c.accent, repos) : ""}
   ${config.sections.includes("testimonials") ? buildTestimonials(c.accent) : ""}
@@ -2123,9 +2196,9 @@ function buildGitHubStats(profile: GitHubProfile, accent: string, repos: GitHubR
       <p class="section-label reveal">Open Source</p>
       <h2 class="section-title reveal">GitHub Activity</h2>
       <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;margin-bottom:32px" class="reveal">
-        <img src="${statsUrl}" alt="${e(username)} GitHub stats" loading="lazy" style="border-radius:12px;max-width:100%;flex-shrink:1;min-width:0;height:auto" onerror="this.style.display='none'">
-        <img src="${langsUrl}" alt="${e(username)} top languages" loading="lazy" style="border-radius:12px;max-width:100%;flex-shrink:1;min-width:0;height:auto" onerror="this.style.display='none'">
-        <img src="${streakUrl}" alt="${e(username)} contribution streak" loading="lazy" style="border-radius:12px;max-width:100%;flex-shrink:1;min-width:0;height:auto" onerror="this.style.display='none'">
+        <img src="${safeUrl(statsUrl)}" alt="${e(username)} GitHub stats" loading="lazy" style="border-radius:12px;max-width:100%;flex-shrink:1;min-width:0;height:auto" onerror="this.style.display='none'">
+        <img src="${safeUrl(langsUrl)}" alt="${e(username)} top languages" loading="lazy" style="border-radius:12px;max-width:100%;flex-shrink:1;min-width:0;height:auto" onerror="this.style.display='none'">
+        <img src="${safeUrl(streakUrl)}" alt="${e(username)} contribution streak" loading="lazy" style="border-radius:12px;max-width:100%;flex-shrink:1;min-width:0;height:auto" onerror="this.style.display='none'">
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap" class="reveal" role="list" aria-label="GitHub statistics">
         ${statCard(profile.public_repos, "Repositories")}
@@ -2311,7 +2384,7 @@ function buildFeaturedProject(aiProjects: AIProject[] | null | undefined, repos:
         </div>
         <p style="font-size:16px;color:#888;line-height:1.8;max-width:700px;margin-bottom:28px">${e(featured.description)}</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <a href="${featured.url}" target="_blank" rel="noopener" style="padding:12px 28px;background:${accent};color:#000;border-radius:10px;font-size:14px;font-weight:700">View on GitHub &rarr;</a>
+          <a href="${safeUrl(featured.url)}" target="_blank" rel="noopener" style="padding:12px 28px;background:${accent};color:#000;border-radius:10px;font-size:14px;font-weight:700">View on GitHub &rarr;</a>
         </div>
       </div>
     </div>
@@ -2401,7 +2474,7 @@ function buildWriting(socialLinks: SocialLinks | undefined, accent: string): str
       <p class="section-label reveal">Published</p>
       <h2 class="section-title reveal">Featured Writing</h2>
       ${hasLink ? `
-      <p class="section-desc reveal">Read more of my writing on ${substackUrl ? `<a href="${substackUrl}" target="_blank" rel="noopener" style="color:${accent}">Substack</a>` : ""}${blogUrl ? ` and my <a href="${blogUrl.startsWith("http") ? blogUrl : "https://" + blogUrl}" target="_blank" rel="noopener" style="color:${accent}">personal blog</a>` : ""}.</p>
+      <p class="section-desc reveal">Read more of my writing on ${substackUrl && safeUrl(substackUrl) !== "#" ? `<a href="${safeUrl(substackUrl)}" target="_blank" rel="noopener" style="color:${accent}">Substack</a>` : ""}${blogUrl && safeUrl(blogUrl) !== "#" ? ` and my <a href="${safeUrl(blogUrl)}" target="_blank" rel="noopener" style="color:${accent}">personal blog</a>` : ""}.</p>
       ` : `<p class="section-desc reveal">Add your Substack or blog URL in the wizard to link your writing here.</p>`}
       <div style="display:flex;flex-direction:column;gap:16px" class="reveal">
         ${[
