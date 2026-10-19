@@ -1,0 +1,33 @@
+ALEX CHEN
+San Francisco, CA • alex@alexchen.dev • https://alexchen.dev • https://github.com/alexchen-ui • https://linkedin.com/in/alexchen-ui
+
+SUMMARY
+Staff Frontend Engineer with 7+ years of experience designing web architecture, design systems, and rich interactive applications. Specialized in TypeScript, React, WebGL, and accessible component architectures serving tens of millions of active users. Proven track record of reducing bundle sizes by 40% and improving Core Web Vitals to the 99th percentile.
+
+WORK EXPERIENCE
+
+DesignOS — San Francisco, CA
+Staff Frontend Engineer | Jan 2022 – Present
+• Architected and led the company-wide migration to a unified design token engine (motion-tokens), used by 45+ product teams across web, iOS, and Android.
+• Engineered a GPU-accelerated canvas editor handling 50k+ vector nodes at 60 FPS using WebGL, Web Workers, and custom spatial index partitioning.
+• Mentored 8 senior engineers, drove frontend architecture RFCs, and established automated visual regression testing pipelines.
+
+LoomFlow Technologies — San Francisco, CA
+Senior Frontend Engineer | Mar 2019 – Dec 2021
+• Spearheaded the core workflow editor redesign, reducing Time to Interactive (TTI) from 4.2s to 1.1s and improving Largest Contentful Paint (LCP) by 65%.
+• Developed headless virtualization primitives for real-time collaborative spreadsheets, supporting 100k+ concurrent active cells.
+• Implemented WCAG 2.1 AA accessibility compliance across all customer-facing dashboard surfaces.
+
+Apex Interactive — San Jose, CA
+Frontend Software Engineer | Jun 2017 – Feb 2019
+• Built responsive landing pages and web client dashboards using React, Redux, and CSS Modules.
+• Integrated GraphQL endpoints with Apollo Client, implementing optimistic UI updates and normalized cache strategies.
+
+EDUCATION
+University of California, Berkeley
+B.S. in Computer Science | 2013 – 2017
+
+SKILLS
+• Languages: TypeScript, JavaScript (ESNext), HTML5, CSS3, GLSL, Python
+• Frameworks & Libraries: React, Next.js, WebGL, Three.js, Tailwind CSS, Radix UI, Zustand, TanStack Query
+• Tooling & Practice: Vite, Turborepo, Webpack, Vitest, Playwright, Storybook, CI/CD, Git, WCAG 2.1 AA
