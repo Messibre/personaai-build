@@ -199,8 +199,8 @@ export function gsapScript(): string {
   <script>
     // ── Dark / light toggle ─────────────────────────────────────────────────���
     (function() {
-      var saved = localStorage.getItem('persona-theme') || 'dark';
-      if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+      var saved = localStorage.getItem('persona-theme') || document.documentElement.getAttribute('data-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
     })();
 
     function toggleTheme() {

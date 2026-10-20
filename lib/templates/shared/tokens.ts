@@ -60,6 +60,73 @@ const STATIC_TOKENS: Record<string, string> = {
   duration: ".3s",
 }
 
+/**
+ * A per-template design layer. Every field is a compile-time constant defined in themes.ts;
+ * no user data ever reaches these values, so they are safe to interpolate into CSS.
+ */
+export type TemplateTheme = {
+  dark: ColorTokens
+  light: ColorTokens
+  fontBody: string
+  fontDisplay: string
+  fontMono: string
+  /** Google Fonts css2 `family=` values, e.g. "Geist+Mono:wght@400;500;700". */
+  googleFamilies: readonly string[]
+  radius: { sm: string; md: string; lg: string }
+  displayWeight: number
+  displayTracking: string
+  /** Mode shown before the visitor toggles. Matches what the template shipped with; omitted = dark. */
+  defaultMode?: "light"
+}
+
+function stack(family: string, fallback: string): string {
+  return `'${family}', ${fallback}`
+}
+
+const SANS_FALLBACK = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+const SERIF_FALLBACK = "Georgia, 'Times New Roman', serif"
+const MONO_FALLBACK = "ui-monospace, SFMono-Regular, Menlo, monospace"
+
+const SERIF_FAMILIES = new Set(["Instrument Serif", "IBM Plex Serif"])
+const MONO_FAMILIES = new Set(["Geist Mono", "JetBrains Mono"])
+
+function familyStack(family: string): string {
+  if (MONO_FAMILIES.has(family)) return stack(family, MONO_FALLBACK)
+  if (SERIF_FAMILIES.has(family)) return stack(family, SERIF_FALLBACK)
+  return stack(family, SANS_FALLBACK)
+}
+
+export function themeFontHref(theme: TemplateTheme): string {
+  const families = theme.googleFamilies.map((f) => `family=${f}`).join("&")
+  return `https://fonts.googleapis.com/css2?${families}&display=swap`
+}
+
+/**
+ * Overrides the base token block for one template. Emitted after baseStyles(), so equal-specificity
+ * selectors here win by source order. Display typography is applied to headings generically;
+ * template rules with higher specificity can still refine size and weight.
+ */
+export function themeCss(theme: TemplateTheme): string {
+  const statics: Record<string, string> = {
+    "font-body": familyStack(theme.fontBody),
+    "font-display": familyStack(theme.fontDisplay),
+    "font-mono": familyStack(theme.fontMono),
+    "radius-sm": theme.radius.sm,
+    "radius-md": theme.radius.md,
+    "radius-lg": theme.radius.lg,
+    "display-weight": String(theme.displayWeight),
+    "display-tracking": theme.displayTracking,
+  }
+  return [
+    `:root { ${declarations(theme.dark)} ${declarations(statics)} }`,
+    `[data-theme="light"] { ${declarations(theme.light)} }`,
+    `body { font-family: var(--font-body); background: var(--bg); color: var(--text); }`,
+    `h1, h2, h3, .section-title, .nav-brand { font-family: var(--font-display); letter-spacing: var(--display-tracking); }`,
+    `.section-title { font-weight: var(--display-weight); }`,
+    `code, pre, kbd { font-family: var(--font-mono); }`,
+  ].join("\n    ")
+}
+
 function declarations(tokens: Record<string, string>): string {
   return Object.entries(tokens)
     .map(([name, value]) => `--${name}: ${value};`)

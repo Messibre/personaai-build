@@ -11,6 +11,7 @@ import { buildSkills } from "../shared/sections/skills"
 import { buildTestimonials } from "../shared/sections/testimonials"
 import { buildWriting } from "../shared/sections/writing"
 import { shell } from "../shared/shell"
+import { THEMES } from "../shared/themes"
 import type { TemplateData } from "../shared/types"
 import { getColorScheme, getLangs, getTopics } from "../shared/utils"
 
@@ -25,31 +26,31 @@ export function buildGlassmorphism(data: TemplateData): string {
   const role = langs.length > 0 ? `${langs[0]} Developer` : "Software Developer"
 
   const extra = `
-    body { background: #050510; overflow-x: hidden; }
+    body { background: var(--bg); overflow-x: hidden; }
     .glass-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
     .glass-bg::before { content: ''; position: absolute; top: -20%; left: -10%; width: 60%; height: 60%; border-radius: 50%; background: ${c.accent}; filter: blur(120px); opacity: 0.12; }
     .glass-bg::after { content: ''; position: absolute; bottom: -20%; right: -10%; width: 50%; height: 50%; border-radius: 50%; background: ${c.primary}; filter: blur(100px); opacity: 0.1; }
     .hero { min-height: 100vh; display: flex; align-items: center; position: relative; z-index: 1; padding: 100px 24px 60px; }
     .hero-inner { max-width: 1100px; margin: 0 auto; width: 100%; display: flex; align-items: center; gap: 60px; }
-    .hero-glass { background: rgba(255,255,255,0.04); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); border-radius: 32px; padding: 56px 48px; flex: 1; }
+    .hero-glass { background: var(--surface); backdrop-filter: blur(24px); border: 1px solid var(--border); border-radius: 32px; padding: 56px 48px; flex: 1; }
     .hero-glass .tag { font-size: 13px; color: ${c.accent}; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
     .hero-glass .tag::before { content: ''; display: inline-block; width: 24px; height: 2px; background: ${c.accent}; }
-    .hero-glass h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+    .hero-glass h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 800; color: var(--text); line-height: 1.2; margin-bottom: 16px; }
     .hero-glass p { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.75; margin-bottom: 32px; max-width: 440px; }
     .hero-glass .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
     .hero-glass .ctas a { padding: 13px 28px; border-radius: 14px; font-weight: 700; font-size: 14px; transition: all .3s; }
-    .hero-glass .ctas .primary { background: ${c.accent}; color: #000; box-shadow: 0 8px 32px ${c.accent}35; }
+    .hero-glass .ctas .primary { background: ${c.accent}; color: var(--accent-contrast); box-shadow: 0 8px 32px ${c.accent}35; }
     .hero-glass .ctas .primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px ${c.accent}50; }
-    .hero-glass .ctas .secondary { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #ccc; backdrop-filter: blur(8px); }
-    .hero-glass .ctas .secondary:hover { background: rgba(255,255,255,0.1); }
+    .hero-glass .ctas .secondary { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); backdrop-filter: blur(8px); }
+    .hero-glass .ctas .secondary:hover { background: var(--surface-2); }
     .hero-photo-wrap { flex-shrink: 0; position: relative; }
-    .hero-photo-wrap img { width: clamp(200px, 22vw, 300px); height: clamp(260px, 28vw, 380px); object-fit: cover; border-radius: 28px; border: 1px solid rgba(255,255,255,0.1); }
+    .hero-photo-wrap img { width: clamp(200px, 22vw, 300px); height: clamp(260px, 28vw, 380px); object-fit: cover; border-radius: 28px; border: 1px solid var(--border); }
     .hero-photo-wrap::before { content: ''; position: absolute; inset: -2px; border-radius: 30px; background: linear-gradient(135deg, ${c.accent}60, transparent 50%, ${c.primary}40); z-index: -1; }
     .hero-photo-wrap::after { content: ''; position: absolute; inset: -20px; border-radius: 40px; background: ${c.accent}; filter: blur(40px); opacity: 0.12; z-index: -2; }
-    .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 28px; transition: all .4s; }
-    .glass-card:hover { background: rgba(255,255,255,0.07); border-color: ${c.accent}30; transform: translateY(-4px); }
+    .glass-card { background: var(--surface); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 20px; padding: 28px; transition: all .4s; }
+    .glass-card:hover { background: var(--surface-2); border-color: ${c.accent}30; transform: translateY(-4px); }
     .glass-section { position: relative; z-index: 1; }
-    .skill-badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(8px); }
+    .skill-badge { background: var(--surface); border: 1px solid var(--border); backdrop-filter: blur(8px); }
     .skill-badge:hover { background: ${c.accent}15; }
     @media (max-width:768px) { .hero-inner { flex-direction: column; } .hero-glass { padding: 36px 24px; } .hero-photo-wrap img { width: 200px; height: 260px; } }
   `
@@ -98,7 +99,7 @@ export function buildGlassmorphism(data: TemplateData): string {
         ${(aiProjects && aiProjects.length > 0 ? aiProjects.slice(0, 7).map(p => `
         <div class="glass-card reveal" style="opacity:0;transform:translateY(40px)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-            <h3 style="font-size:17px;font-weight:700;color:#fff">${e(p.name)}</h3>
+            <h3 style="font-size:17px;font-weight:700;color:var(--text)">${e(p.name)}</h3>
             ${p.stars > 0 ? `<span style="font-size:12px;color:${c.accent};font-weight:600">&#9733; ${p.stars}</span>` : ""}
           </div>
           <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:16px">${e(stripMd(p.description))}</p>
@@ -111,7 +112,7 @@ export function buildGlassmorphism(data: TemplateData): string {
           return `
         <div class="glass-card reveal" style="opacity:0;transform:translateY(40px)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-            <h3 style="font-size:17px;font-weight:700;color:#fff">${e(r.name)}</h3>
+            <h3 style="font-size:17px;font-weight:700;color:var(--text)">${e(r.name)}</h3>
             ${r.stargazers_count > 0 ? `<span style="font-size:12px;color:${c.accent};font-weight:600">&#9733; ${r.stargazers_count}</span>` : ""}
           </div>
           <p style="font-size:13px;color:rgba(255,255,255,0.5);line-height:1.6;margin-bottom:16px">${e(desc)}</p>
@@ -134,5 +135,5 @@ export function buildGlassmorphism(data: TemplateData): string {
   </main>
   ${buildFooter(name, c.accent)}`
 
-  return shell(c.accent, extra, body, name, aiBio || profile.bio || undefined, img, [...getLangs(repos), ...getTopics(repos)], data.socialLinks, profile.html_url)
+  return shell(c.accent, extra, body, name, aiBio || profile.bio || undefined, img, [...getLangs(repos), ...getTopics(repos)], data.socialLinks, profile.html_url, THEMES["glassmorphism"])
 }

@@ -1,8 +1,11 @@
 import type { SocialLinks } from "../../types"
 import { baseStyles, gsapScript } from "./base-styles"
 import { e, safeUrl, safeImageSrc, safeColor } from "./escape"
+import { themeCss, themeFontHref, type TemplateTheme } from "./tokens"
 
-export function shell(accent: string, extraStyles: string, bodyContent: string, name: string, bio?: string, photoUrl?: string, skills?: string[], socialLinks?: SocialLinks, profileUrl?: string): string {
+export function shell(accent: string, extraStyles: string, bodyContent: string, name: string, bio?: string, photoUrl?: string, skills?: string[], socialLinks?: SocialLinks, profileUrl?: string, theme?: TemplateTheme): string {
+  const fontLink = theme ? `<link rel="stylesheet" href="${e(themeFontHref(theme))}">` : ""
+  const themeStyles = theme ? themeCss(theme) : ""
   const description = bio 
     ? `${name} - ${bio.substring(0, 150)}${bio.length > 150 ? "..." : ""}`
     : `${name}'s personal portfolio showcasing projects, skills, and experience.`
@@ -31,7 +34,7 @@ export function shell(accent: string, extraStyles: string, bodyContent: string, 
   })
   
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en"${theme?.defaultMode === "light" ? ' data-theme="light"' : ""}>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -58,6 +61,7 @@ ${safePhotoUrl ? `<meta name="twitter:image" content="${safePhotoUrl}">` : ""}
 <!-- Preconnect for performance -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+${fontLink}
 <link rel="preconnect" href="https://github-readme-stats.vercel.app">
 <link rel="preconnect" href="https://github-readme-streak-stats.herokuapp.com">
 
@@ -70,7 +74,8 @@ ${safePhotoUrl ? `<meta name="twitter:image" content="${safePhotoUrl}">` : ""}
 <style>
   .skip-link { position:absolute; top:-100px; left:16px; padding:8px 16px; background:${safeAccent}; color:#000; font-weight:700; font-size:14px; border-radius:4px; z-index:9999; transition:top .2s; }
   .skip-link:focus { top:8px; }
-  ${baseStyles(safeAccent)}${extraStyles}
+  ${baseStyles(safeAccent)}
+    ${themeStyles}${extraStyles}
 </style>
 </head>
 <body>

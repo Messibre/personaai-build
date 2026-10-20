@@ -11,6 +11,7 @@ import { buildSkills } from "../shared/sections/skills"
 import { buildTestimonials } from "../shared/sections/testimonials"
 import { buildWriting } from "../shared/sections/writing"
 import { shell } from "../shared/shell"
+import { THEMES } from "../shared/themes"
 import type { TemplateData } from "../shared/types"
 import { getColorScheme, getLangs, getTopics } from "../shared/utils"
 
@@ -26,26 +27,26 @@ export function buildBrutalist(data: TemplateData): string {
 
   const extra = `
     * { border-radius: 0 !important; }
-    body { background: #0a0a0a; color: #f0f0f0; font-family: 'JetBrains Mono', monospace; }
+    body { background: var(--bg); color: var(--text); font-family:var(--font-mono); }
     .hero { min-height: 100vh; display: flex; align-items: stretch; border-bottom: 4px solid ${c.accent}; }
-    .hero-left { flex: 1.2; background: #0a0a0a; padding: 120px 48px 80px; display: flex; flex-direction: column; justify-content: flex-end; border-right: 4px solid ${c.accent}; }
-    .hero-left h1 { font-size: clamp(3rem, 9vw, 7.5rem); font-weight: 900; line-height: 0.9; color: #fff; text-transform: uppercase; letter-spacing: -0.03em; margin-bottom: 24px; }
+    .hero-left { flex: 1.2; background: var(--bg); padding: 120px 48px 80px; display: flex; flex-direction: column; justify-content: flex-end; border-right: 4px solid ${c.accent}; }
+    .hero-left h1 { font-size: clamp(3rem, 9vw, 6rem); font-weight: var(--display-weight); line-height: 0.9; color: var(--text); text-transform: uppercase; letter-spacing: var(--display-tracking); margin-bottom: 24px; }
     .hero-left h1 em { color: ${c.accent}; font-style: normal; display: block; }
-    .hero-left p { font-size: 13px; color: #888; line-height: 1.8; max-width: 360px; font-family: 'Inter', sans-serif; }
-    .hero-left .role-tag { display: inline-block; background: ${c.accent}; color: #000; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 6px 16px; margin-bottom: 20px; }
-    .hero-right { flex: 0.7; background: #111; display: flex; flex-direction: column; align-items: stretch; }
+    .hero-left p { font-size: 13px; color: var(--muted); line-height: 1.8; max-width: 360px; font-family:var(--font-body); }
+    .hero-left .role-tag { display: inline-block; background: ${c.accent}; color: var(--accent-contrast); font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 6px 16px; margin-bottom: 20px; }
+    .hero-right { flex: 0.7; background: var(--surface); display: flex; flex-direction: column; align-items: stretch; }
     .hero-right img { width: 100%; height: 65%; object-fit: cover; filter: grayscale(100%) contrast(1.2); border-bottom: 4px solid ${c.accent}; }
     .hero-right-info { padding: 24px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
-    .stat-box { border: 2px solid rgba(255,255,255,0.08); padding: 14px 16px; }
+    .stat-box { border: 2px solid var(--border); padding: 14px 16px; }
     .stat-box .num { font-size: 28px; font-weight: 900; color: ${c.accent}; }
-    .stat-box .lbl { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+    .stat-box .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
     .brut-section { border-top: 4px solid ${c.accent}; }
-    .brut-section .section-label { background: ${c.accent}; color: #000; display: inline-block; padding: 4px 16px; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0; }
-    .brut-section .section-title { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; border-bottom: 2px solid rgba(255,255,255,0.06); padding-bottom: 24px; margin-bottom: 40px; }
+    .brut-section .section-label { background: ${c.accent}; color: var(--accent-contrast); display: inline-block; padding: 4px 16px; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0; }
+    .brut-section .section-title { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; border-bottom: 2px solid var(--border); padding-bottom: 24px; margin-bottom: 40px; }
     .projects-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-    .project-card { border: 2px solid rgba(255,255,255,0.08); background: #0f0f0f; }
+    .project-card { border: 2px solid var(--border); background: var(--bg); }
     .project-card:hover { border-color: ${c.accent}; }
-    .project-name { font-family: 'JetBrains Mono', monospace; font-size: 15px; }
+    .project-name { font-family:var(--font-mono); font-size: 15px; }
     @media (max-width:768px) { .hero { flex-direction: column; } .hero-right { border-left: none; border-top: 4px solid ${c.accent}; } .hero-left { padding: 100px 24px 40px; } }
   `
   const body = `
@@ -71,10 +72,10 @@ export function buildBrutalist(data: TemplateData): string {
     <div class="container">
       <span class="section-label">About</span>
       <h2 class="section-title reveal">Who Am I</h2>
-      ${(aiBio || profile.bio) ? `<p class="section-desc reveal" style="max-width:700px;font-family:'Inter',sans-serif">${e((aiBio || profile.bio))}</p>` : ""}
+      ${(aiBio || profile.bio) ? `<p class="section-desc reveal" style="max-width:700px;font-family:var(--font-body)">${e((aiBio || profile.bio))}</p>` : ""}
       <div style="display:flex;gap:24px;flex-wrap:wrap" class="reveal">
-        ${profile.location ? `<span style="border:2px solid var(--border,rgba(255,255,255,0.08));padding:8px 16px;font-size:13px;color:var(--muted,#aaa)">${e(profile.location)}</span>` : ""}
-        ${profile.company ? `<span style="border:2px solid var(--border,rgba(255,255,255,0.08));padding:8px 16px;font-size:13px;color:var(--muted,#aaa)">${e(profile.company)}</span>` : ""}
+        ${profile.location ? `<span style="border:2px solid var(--border);padding:8px 16px;font-size:13px;color:var(--muted)">${e(profile.location)}</span>` : ""}
+        ${profile.company ? `<span style="border:2px solid var(--border);padding:8px 16px;font-size:13px;color:var(--muted)">${e(profile.company)}</span>` : ""}
       </div>
     </div>
   </section>` : ""}
@@ -90,5 +91,5 @@ export function buildBrutalist(data: TemplateData): string {
   </main>
   ${buildFooter(name, c.accent)}`
 
-  return shell(c.accent, extra, body, name, aiBio || profile.bio || undefined, img, [...getLangs(repos), ...getTopics(repos)], data.socialLinks, profile.html_url)
+  return shell(c.accent, extra, body, name, aiBio || profile.bio || undefined, img, [...getLangs(repos), ...getTopics(repos)], data.socialLinks, profile.html_url, THEMES["brutalist"])
 }
