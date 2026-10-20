@@ -50,7 +50,6 @@ export function buildPastelCreative(data: TemplateData): string {
   <section id="home" class="hero">
     <div class="hero-inner">
       <div class="hero-text">
-        <span class="tag hero-anim">Available for hire</span>
         <h1 class="hero-anim">${e(name)}</h1>
         <p class="hero-anim">${e(aiBio || profile.bio || "A creative developer making beautiful, functional digital experiences.")}</p>
         <div class="hero-ctas hero-anim">
