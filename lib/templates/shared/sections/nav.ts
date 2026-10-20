@@ -9,7 +9,7 @@ export function navLabel(s: string): string {
 }
 
 export function buildNav(name: string, sections: string[], accent: string): string {
-  const navItems = ["home", ...sections.filter(s => s !== "home")]
+  const navItems = ["home", ...sections.filter(s => s !== "home" && s !== "testimonials")]
   const hasContact = sections.includes("contact")
   return `
   <nav class="nav" role="navigation" aria-label="Main navigation">
