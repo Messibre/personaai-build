@@ -44,10 +44,10 @@ export function buildSwissEditorial(data: TemplateData): string {
     .mobile-menu a { font-size:14px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; padding:8px 0; border-bottom:1px solid var(--border); }
     .section { position:relative; padding:80px 40px; }
     .container { max-width:1200px; margin:0 auto; }
-    .hero { min-height:100vh; display:grid; grid-template-columns:1fr 1px 1fr; padding-top:60px; }
+    .hero { min-height:100vh; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); padding:60px 40px 0; }
     .hero-left { padding:80px 60px 80px 0; display:flex; flex-direction:column; justify-content:flex-end; border-right:2px solid var(--text); }
     .hero-right { padding:80px 0 80px 60px; display:flex; flex-direction:column; }
-    .big-initial { font-size:clamp(8rem,16vw,14rem); font-weight:900; color:${c.accent}; line-height:1; letter-spacing:-4px; }
+    .big-initial { font-size:clamp(8rem,16vw,14rem); font-weight:900; color:${c.accent}; line-height:1.1; letter-spacing:-4px; padding-bottom:.08em; }
     .hero-firstname { font-size:clamp(2.5rem,5vw,5rem); font-weight:900; color:var(--text); line-height:1; letter-spacing:-2px; }
     .hero-lastname { font-size:clamp(2rem,4vw,4rem); font-weight:300; color:var(--muted); line-height:1; letter-spacing:-1px; }
     .hero-role { font-size:12px; font-weight:700; letter-spacing:4px; color:var(--muted); text-transform:uppercase; margin-top:24px; }
@@ -75,7 +75,7 @@ export function buildSwissEditorial(data: TemplateData): string {
     .footer a { color:${c.accent}; }
     .reveal { opacity:0; transform:translateY(20px); }
     @media(max-width:768px){
-      .hero { grid-template-columns:1fr; grid-template-rows:auto auto; min-height:auto; }
+      .hero { grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto; min-height:auto; padding:60px 0 0; }
       .hero-left { border-right:none; border-bottom:2px solid var(--text); padding:60px 24px 40px; }
       .hero-left .big-initial { font-size:clamp(5rem,18vw,8rem); }
       .hero-right { padding:40px 24px; }
