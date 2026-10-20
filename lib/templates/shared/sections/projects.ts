@@ -2,19 +2,10 @@ import type { GitHubRepo, AIProject } from "../../../types"
 import { e, safeUrl, stripMd } from "../escape"
 import { langColor } from "../utils"
 
-export function smartRepoDescription(name: string, language: string | null): string {
-  // Convert repo-name-with-hyphens to readable words
-  const words = name.replace(/[-_]/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase()
-  const lang = language ? `${language}-based ` : ""
-  // Detect common patterns
-  if (/api|backend|server/.test(words)) return `A ${lang}backend API service for ${words.replace(/api|backend|server/g, "").trim() || "data management"}.`
-  if (/cli|tool|script/.test(words)) return `A ${lang}command-line tool for ${words.replace(/cli|tool|script/g, "").trim() || "automation"}.`
-  if (/app|web|site|portfolio/.test(words)) return `A ${lang}web application — ${words}.`
-  if (/bot|discord|telegram/.test(words)) return `An automated ${lang}bot: ${words}.`
-  if (/ml|model|predict|classify/.test(words)) return `A machine learning project for ${words}.`
-  if (/game|chess|puzzle/.test(words)) return `A ${lang}game: ${words}.`
-  if (/dashboard|admin|panel/.test(words)) return `A ${lang}dashboard for managing ${words.replace(/dashboard|admin|panel/g, "").trim() || "data"}.`
-  return `A ${lang}project — ${words.charAt(0).toUpperCase() + words.slice(1)}.`
+// Guessing a repo's purpose from its name produced invented claims, so a repo
+// without a real description gets none. Kept as a function so callers stay unchanged.
+export function smartRepoDescription(_name: string, _language: string | null): string {
+  return ""
 }
 
 // Build projects from either AI-enhanced projects or raw repos
@@ -23,7 +14,7 @@ export function buildProjects(repos: GitHubRepo[], accent: string, aiProjects?: 
     const desc = repo.description?.trim() || ""
     if (desc && !(desc.includes("A ") && desc.includes(" project") && desc.split(/\s+/).length <= 4)) return desc
     if (repo.topics?.length) return `A ${repo.language || "software"} project focused on ${repo.topics.slice(0, 3).join(", ")}.`
-    return `Open-source ${repo.language || "software"} project. View on GitHub for details.`
+    return ""
   }
 
   // Determine the most recently pushed repo (first non-fork in the list, as GitHub API returns by updated_at)
@@ -84,7 +75,7 @@ export function buildProjects(repos: GitHubRepo[], accent: string, aiProjects?: 
           ${r.stargazers_count > 0 ? `<span class="project-stars" aria-label="${r.stargazers_count} stars">&#9733; ${r.stargazers_count}</span>` : ""}
         </div>
       </div>
-      <p class="project-desc">${e(desc)}</p>
+      ${desc ? `<p class="project-desc">${e(desc)}</p>` : ""}
       <div class="project-meta">
         ${r.language ? `<span class="project-lang">${e(r.language)}</span>` : ""}
         ${r.topics?.slice(0, 1).map(t => `<span class="project-lang" style="opacity:0.55">${e(t)}</span>`).join("") || ""}
