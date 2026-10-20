@@ -20,7 +20,7 @@ export function buildSpotlightDark(data: TemplateData): string {
   const c = getColorScheme(config.colorScheme, "ocean")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
-  const bio = aiBio || profile.bio || "Focused on building great software."
+  const bio = aiBio || profile.bio || ""
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const img = safeImageSrc(data.photoUrl || profile.avatar_url)
@@ -99,7 +99,7 @@ export function buildSpotlightDark(data: TemplateData): string {
         <div>
           <p class="eyebrow hero-anim">${e(role)}</p>
           <h1 class="hero-name hero-anim">${e(name)}</h1>
-          <p class="hero-bio hero-anim">${e(bio)}</p>
+          ${bio ? `<p class="hero-bio hero-anim">${e(bio)}</p>` : ""}
           <div class="hero-ctas hero-anim">
             <a href="#projects" class="btn-primary">View Projects</a>
             <a href="#contact" class="btn-secondary">Get in Touch</a>
@@ -113,7 +113,7 @@ export function buildSpotlightDark(data: TemplateData): string {
   </section>
   <main>
   <div class="divider"></div>
-  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}</h2><p style="font-size:16px;color:#666;line-height:1.85;max-width:680px" class="reveal">${e(bio)}</p></div></section><div class="divider"></div>` : ""}
+  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}</h2>${bio ? `<p style="font-size:16px;color:#666;line-height:1.85;max-width:680px" class="reveal">${e(bio)}</p>` : ""}</div></section><div class="divider"></div>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">Skills</p><h2 class="section-title reveal">What I work with</h2><div class="skill-wrap reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section><div class="divider"></div>` : ""}
   ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Projects</p><h2 class="section-title reveal">Selected Work</h2><div role="list">${projects.map((p,i)=>`<div class="project-row reveal" role="listitem"><span class="proj-num" aria-hidden="true">${String(i+1).padStart(2,"0")}</span><div><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p>${p.language?`<span class="proj-lang">${e(p.language)}</span>`:""}</div><a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="proj-link" aria-label="View ${e(p.name)}">View &rarr;</a></div>`).join("")}</div></div></section><div class="divider"></div>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}

@@ -49,7 +49,7 @@ export function buildSplitEditorial(data: TemplateData): string {
     </div>
     <div class="hero-light">
       <h1 class="hero-anim">${e(name)}<br><span>Portfolio</span></h1>
-      <p class="hero-anim">${e(aiBio || profile.bio || "Creating impactful digital experiences with code and design.")}</p>
+      ${(aiBio || profile.bio) ? `<p class="hero-anim">${e((aiBio || profile.bio))}</p>` : ""}
       <a href="#projects" class="cta hero-anim">View Projects &darr;</a>
     </div>
   </section>

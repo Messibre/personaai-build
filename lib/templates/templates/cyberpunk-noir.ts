@@ -20,7 +20,7 @@ export function buildCyberpunkNoir(data: TemplateData): string {
   const c = getColorScheme(config.colorScheme, "rose")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
-  const bio = aiBio || profile.bio || "Building the future, one line at a time."
+  const bio = aiBio || profile.bio || ""
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const img = safeImageSrc(data.photoUrl || profile.avatar_url)
@@ -94,7 +94,7 @@ export function buildCyberpunkNoir(data: TemplateData): string {
         <div>
           <p class="hero-sub hero-anim">${e(role)}</p>
           <h1 class="glitch-title hero-anim" data-text="${e(name)}">${e(name)}</h1>
-          <p class="hero-bio hero-anim">${e(bio)}</p>
+          ${bio ? `<p class="hero-bio hero-anim">${e(bio)}</p>` : ""}
           <div style="display:flex;gap:12px;flex-wrap:wrap" class="hero-anim">
             <a href="#projects" style="font-family:'Rajdhani',sans-serif;padding:12px 28px;background:${c.accent};color:#000;font-size:15px;font-weight:700;letter-spacing:1px;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)">PROJECTS</a>
             <a href="#contact" style="font-family:'Rajdhani',sans-serif;padding:12px 28px;border:1px solid ${c.accent}40;color:${c.accent};font-size:15px;font-weight:600;letter-spacing:1px">CONTACT</a>
@@ -111,7 +111,7 @@ export function buildCyberpunkNoir(data: TemplateData): string {
     </div>
   </section>
   <main>
-  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">about</p><h2 class="section-title reveal">Who I Am</h2><p style="font-size:15px;color:#888;line-height:1.85;max-width:680px" class="reveal">${e(bio)}</p></div></section>` : ""}
+  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">about</p><h2 class="section-title reveal">Who I Am</h2>${bio ? `<p style="font-size:15px;color:#888;line-height:1.85;max-width:680px" class="reveal">${e(bio)}</p>` : ""}</div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">skills</p><h2 class="section-title reveal">Arsenal</h2><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section>` : ""}
   ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">projects</p><h2 class="section-title reveal">Missions Completed</h2>${projects.map(p=>`<div class="project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="project-name">${e(p.name)}</p>${p.stars>0?`<span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${c.accent}60" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p class="project-desc">${e(stripMd(p.description))}</p><div class="project-meta">${p.language?`<span class="project-lang">${e(p.language)}</span>`:""}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="project-link" aria-label="Access ${e(p.name)}">access &rarr;</a></div></div>`).join("")}</div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}

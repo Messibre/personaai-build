@@ -15,7 +15,7 @@ export function buildSwissEditorial(data: TemplateData): string {
   const c = getColorScheme(config.colorScheme, "ember")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
-  const bio = aiBio || profile.bio || "Precision engineering for the web."
+  const bio = aiBio || profile.bio || ""
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const img = safeImageSrc(data.photoUrl || profile.avatar_url)
@@ -109,12 +109,12 @@ export function buildSwissEditorial(data: TemplateData): string {
       <div class="hero-photo-right hero-anim">
         <img src="${img}" alt="${e(name)}" crossorigin="anonymous">
       </div>
-      <p class="hero-bio-right hero-anim">${e(bio)}</p>
+      ${bio ? `<p class="hero-bio-right hero-anim">${e(bio)}</p>` : ""}
       <a href="#projects" class="hero-cta hero-anim">View Projects</a>
     </div>
   </section>
   <main>
-  ${config.sections.includes("about") ? `<section id="about" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">01</div><div><p class="section-label reveal">About</p><h2 class="section-title reveal">The human<br>behind the code</h2><p style="font-size:15px;color:#888;line-height:1.85;max-width:600px" class="reveal">${e(bio)}</p></div></div></div></section>` : ""}
+  ${config.sections.includes("about") ? `<section id="about" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">01</div><div><p class="section-label reveal">About</p><h2 class="section-title reveal">The human<br>behind the code</h2>${bio ? `<p style="font-size:15px;color:#888;line-height:1.85;max-width:600px" class="reveal">${e(bio)}</p>` : ""}</div></div></div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">02</div><div><p class="section-label reveal">Skills</p><h2 class="section-title reveal">Toolkit</h2><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></div></div></section>` : ""}
   ${config.sections.includes("projects") ? `<section id="projects" class="section border-top"><div class="container"><div style="display:grid;grid-template-columns:1fr 3fr;gap:60px;align-items:start"><div class="section-num" aria-hidden="true">03</div><div><p class="section-label reveal">Projects</p><h2 class="section-title reveal">Selected<br>Work</h2><div role="list">${projects.map((p,i)=>`<div class="project-item reveal" role="listitem"><span class="proj-num" aria-hidden="true">${String(i+1).padStart(2,"0")}</span><div style="flex:1"><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p>${p.language?`<span class="proj-lang">${e(p.language)}</span>`:""}</div><a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="proj-link" aria-label="Open ${e(p.name)}">Open &rarr;</a></div>`).join("")}</div></div></div></div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}

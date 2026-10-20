@@ -20,7 +20,7 @@ export function buildGradientAurora(data: TemplateData): string {
   const c = getColorScheme(config.colorScheme, "lavender")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
-  const bio = aiBio || profile.bio || "Creating beautiful digital experiences."
+  const bio = aiBio || profile.bio || ""
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const img = safeImageSrc(data.photoUrl || profile.avatar_url)
@@ -90,7 +90,7 @@ export function buildGradientAurora(data: TemplateData): string {
         <div class="hero-photo-circle hero-anim"><img src="${img}" alt="${e(name)}" crossorigin="anonymous"></div>
         <div class="hero-pill hero-anim">${e(role)}</div>
         <h1 class="hero-name hero-anim"><span class="gradient-text">${e(name)}</span></h1>
-        <p class="hero-bio hero-anim">${e(bio)}</p>
+        ${bio ? `<p class="hero-bio hero-anim">${e(bio)}</p>` : ""}
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap" class="hero-anim">
           <a href="#projects" class="gradient-btn">See My Work</a>
           <a href="#contact" style="padding:14px 32px;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);border-radius:50px;font-size:14px">Say Hello</a>
@@ -99,7 +99,7 @@ export function buildGradientAurora(data: TemplateData): string {
     </div>
   </section>
   <main>
-  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}&rsquo;s story</h2><p style="font-size:15px;color:rgba(255,255,255,0.45);line-height:1.85;max-width:640px;margin:0 auto;text-align:center" class="reveal">${e(bio)}</p></div></section>` : ""}
+  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}&rsquo;s story</h2>${bio ? `<p style="font-size:15px;color:rgba(255,255,255,0.45);line-height:1.85;max-width:640px;margin:0 auto;text-align:center" class="reveal">${e(bio)}</p>` : ""}</div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">Stack</p><h2 class="section-title reveal">Tools &amp; Technologies</h2><div style="text-align:center" class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section>` : ""}
   ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Work</p><h2 class="section-title reveal">Featured Projects</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">${projects.map(p=>`<div class="project-card reveal"><p class="proj-name">${e(p.name)}</p><p class="proj-desc">${e(stripMd(p.description))}</p><div style="display:flex;align-items:center;justify-content:space-between">${p.language?`<span class="proj-lang">${e(p.language)}</span>`:`<span></span>`}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="proj-link" aria-label="View ${e(p.name)}">View &rarr;</a></div></div>`).join("")}</div></div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}

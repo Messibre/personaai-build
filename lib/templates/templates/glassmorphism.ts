@@ -61,7 +61,7 @@ export function buildGlassmorphism(data: TemplateData): string {
       <div class="hero-glass hero-anim">
         <div class="tag">${e(role)}</div>
         <h1>${e(name)}</h1>
-        <p>${e(aiBio || profile.bio || "Crafting elegant digital experiences at the intersection of design and technology.")}</p>
+        ${(aiBio || profile.bio) ? `<p>${e((aiBio || profile.bio))}</p>` : ""}
         <div class="ctas">
           <a href="#projects" class="primary">View My Work</a>
           <a href="#contact" class="secondary">Get in Touch</a>
@@ -79,7 +79,7 @@ export function buildGlassmorphism(data: TemplateData): string {
       <p class="section-label reveal">About</p>
       <h2 class="section-title reveal">A little about me</h2>
       <div class="glass-card reveal" style="max-width:700px">
-        <p style="color:rgba(255,255,255,0.7);line-height:1.75;font-size:15px">${e(aiBio || profile.bio || "A passionate developer dedicated to crafting exceptional digital experiences.")}</p>
+        ${(aiBio || profile.bio) ? `<p style="color:rgba(255,255,255,0.7);line-height:1.75;font-size:15px">${e((aiBio || profile.bio))}</p>` : ""}
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:24px">
           ${profile.location ? `<span style="font-size:13px;color:${c.accent}">&#9679; ${e(profile.location)}</span>` : ""}
           ${profile.company ? `<span style="font-size:13px;color:${c.accent}">&#9679; ${e(profile.company)}</span>` : ""}

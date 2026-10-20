@@ -54,7 +54,7 @@ export function buildBrutalist(data: TemplateData): string {
     <div class="hero-left">
       <span class="role-tag hero-anim">${e(role)}</span>
       <h1 class="hero-anim">${e(name.split(" ")[0])}<em>${e(name.split(" ").slice(1).join(" ") || ".")}</em></h1>
-      <p class="hero-anim">${e(aiBio || profile.bio || "Building things that matter. One commit at a time.")}</p>
+      ${(aiBio || profile.bio) ? `<p class="hero-anim">${e((aiBio || profile.bio))}</p>` : ""}
     </div>
     <div class="hero-right hero-anim">
       <img src="${img}" alt="${e(name)}" crossorigin="anonymous">
@@ -71,7 +71,7 @@ export function buildBrutalist(data: TemplateData): string {
     <div class="container">
       <span class="section-label">About</span>
       <h2 class="section-title reveal">Who Am I</h2>
-      <p class="section-desc reveal" style="max-width:700px;font-family:'Inter',sans-serif">${e(aiBio || profile.bio || "A developer dedicated to crafting exceptional digital experiences.")}</p>
+      ${(aiBio || profile.bio) ? `<p class="section-desc reveal" style="max-width:700px;font-family:'Inter',sans-serif">${e((aiBio || profile.bio))}</p>` : ""}
       <div style="display:flex;gap:24px;flex-wrap:wrap" class="reveal">
         ${profile.location ? `<span style="border:2px solid var(--border,rgba(255,255,255,0.08));padding:8px 16px;font-size:13px;color:var(--muted,#aaa)">${e(profile.location)}</span>` : ""}
         ${profile.company ? `<span style="border:2px solid var(--border,rgba(255,255,255,0.08));padding:8px 16px;font-size:13px;color:var(--muted,#aaa)">${e(profile.company)}</span>` : ""}

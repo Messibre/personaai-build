@@ -49,7 +49,7 @@ export function buildBoldPortrait(data: TemplateData): string {
     <div class="hero-overlay"></div>
     <div class="hero-content">
       <h1 class="hero-anim">Hello<span>.</span></h1>
-      <p class="hero-bio hero-anim">${e(aiBio || profile.bio || `I'm ${name}, a developer building exceptional digital experiences.`)}</p>
+      ${(aiBio || profile.bio) ? `<p class="hero-bio hero-anim">${e(aiBio || profile.bio)}</p>` : ""}
       <div class="stats-row hero-anim">
         <div><div class="stat-num">+${profile.public_repos}</div><div class="stat-label">Projects</div></div>
         <div><div class="stat-num">+${profile.followers}</div><div class="stat-label">Followers</div></div>

@@ -42,7 +42,7 @@ export function buildMinimalClean(data: TemplateData): string {
   <section id="home" class="hero">
     <img src="${img}" alt="${e(name)}" class="hero-photo hero-anim hero-photo-parallax" crossorigin="anonymous">
     <h1 class="hero-anim">${e(name)}</h1>
-    <p class="hero-anim">${e(aiBio || profile.bio || "Developer & Creator")}</p>
+    ${(aiBio || profile.bio) ? `<p class="hero-anim">${e((aiBio || profile.bio))}</p>` : ""}
     <a href="#projects" class="cta hero-anim">View Work</a>
   </section>
   <main>

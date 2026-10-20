@@ -2,7 +2,7 @@ import type { GitHubProfile, GitHubRepo } from "../../../types"
 import { e, safeUrl } from "../escape"
 
 export function buildAbout(profile: GitHubProfile, aiBio: string | null, accent: string, repos?: GitHubRepo[]): string {
-  const bio = aiBio || profile.bio || "I build useful software and care about making it simple to maintain."
+  const bio = aiBio || profile.bio || ""
   const totalStars = repos ? repos.reduce((s, r) => s + r.stargazers_count, 0) : 0
 
   // Quick-fact pills
@@ -17,7 +17,7 @@ export function buildAbout(profile: GitHubProfile, aiBio: string | null, accent:
     <div class="container">
       <p class="section-label reveal">About</p>
       <h2 class="section-title reveal">A little about me</h2>
-      <p class="section-desc reveal" style="max-width:720px;font-size:17px;line-height:1.75;color:var(--muted,#888)">${e(bio)}</p>
+      ${bio ? `<p class="section-desc reveal" style="max-width:720px;font-size:17px;line-height:1.75;color:var(--muted,#888)">${e(bio)}</p>` : ""}
       ${facts.length ? `
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px" class="reveal" role="list" aria-label="Quick facts">
         ${facts.map(f => `<span role="listitem" class="about-fact" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;background:var(--surface,rgba(255,255,255,0.04));border:1px solid var(--border,rgba(255,255,255,0.08));font-size:13px;color:var(--text,#e8e8ef)">${f}</span>`).join("")}

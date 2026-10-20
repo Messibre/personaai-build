@@ -20,7 +20,7 @@ export function buildLiquidGlass(data: TemplateData): string {
   const c = getColorScheme(config.colorScheme, "arctic")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
-  const bio = aiBio || profile.bio || "Crafting digital experiences."
+  const bio = aiBio || profile.bio || ""
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const img = safeImageSrc(data.photoUrl || profile.avatar_url)
@@ -86,7 +86,7 @@ export function buildLiquidGlass(data: TemplateData): string {
         <div>
           <div class="hero-tag hero-anim">${e(role)}</div>
           <h1 class="hero-name hero-anim">${e(name)}</h1>
-          <p class="hero-bio hero-anim">${e(bio)}</p>
+          ${bio ? `<p class="hero-bio hero-anim">${e(bio)}</p>` : ""}
           <div style="display:flex;gap:12px;flex-wrap:wrap" class="hero-anim">
             <a href="#projects" style="padding:14px 28px;background:${c.accent};color:#000;border-radius:50px;font-weight:600;font-size:14px">See Work</a>
             <a href="#contact" style="padding:14px 28px;border:1px solid rgba(255,255,255,0.12);color:#fff;border-radius:50px;font-size:14px;backdrop-filter:blur(8px)">Contact</a>
@@ -99,7 +99,7 @@ export function buildLiquidGlass(data: TemplateData): string {
     </div>
   </section>
   <main>
-  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}&rsquo;s story</h2><div class="glass-strong reveal" style="padding:32px;max-width:680px"><p style="color:rgba(255,255,255,0.65);font-size:15px;line-height:1.8">${e(bio)}</p></div></div></section>` : ""}
+  ${config.sections.includes("about") ? `<section id="about" class="section"><div class="container"><p class="section-label reveal">About</p><h2 class="section-title reveal">${e(name.split(" ")[0])}&rsquo;s story</h2><div class="glass-strong reveal" style="padding:32px;max-width:680px">${bio ? `<p style="color:rgba(255,255,255,0.65);font-size:15px;line-height:1.8">${e(bio)}</p>` : ""}</div></div></section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">Skills</p><h2 class="section-title reveal">Tech Stack</h2><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div></section>` : ""}
   ${config.sections.includes("projects") ? `<section id="projects" class="section"><div class="container"><p class="section-label reveal">Work</p><h2 class="section-title reveal">Featured Projects</h2><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">${projects.map(p=>`<div class="glass project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><h3 style="font-size:16px;font-weight:700;color:#fff">${e(p.name)}</h3>${p.stars>0?`<span style="font-size:12px;color:${c.accent};font-weight:600" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:16px">${e(stripMd(p.description))}</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${p.language?`<span style="font-size:11px;padding:3px 12px;border-radius:50px;background:${c.accent}12;color:${c.accent};border:1px solid ${c.accent}20">${e(p.language)}</span>`:""}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" style="font-size:13px;color:${c.accent};font-weight:600;margin-left:auto" aria-label="View ${e(p.name)} on GitHub">View &rarr;</a></div></div>`).join("")}</div></div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}

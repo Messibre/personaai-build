@@ -20,7 +20,7 @@ export function buildTerminal(data: TemplateData): string {
   const c = getColorScheme(config.colorScheme, "forest")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
-  const bio = aiBio || profile.bio || "Building things that matter."
+  const bio = aiBio || profile.bio || ""
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const img = safeImageSrc(data.photoUrl || profile.avatar_url)
@@ -91,7 +91,7 @@ export function buildTerminal(data: TemplateData): string {
         <div class="cmd-line">whoami</div>
         <div style="margin-bottom:16px"><span class="key">name</span>: <span class="val">"${e(name)}"</span> <span class="comment">// ${e(role)}</span></div>
         <div class="cmd-line">cat about.txt</div>
-        <div style="margin-bottom:16px;color:#aaa;font-size:13px;line-height:1.8;max-width:580px">${e(bio)}</div>
+        ${bio ? `<div style="margin-bottom:16px;color:#aaa;font-size:13px;line-height:1.8;max-width:580px">${e(bio)}</div>` : ""}
         <div class="cmd-line">ls -la skills/</div>
         <div style="margin-bottom:16px">${langs.slice(0, 6).map(l => `<span class="skill-badge">${e(l)}</span>`).join("")}</div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px">
@@ -103,7 +103,7 @@ export function buildTerminal(data: TemplateData): string {
     </div>
   </section>
   <main>
-  ${config.sections.includes("about") ? `<section id="about" class="section"><p class="section-heading reveal">about_me</p><p style="font-size:13px;color:#888;line-height:1.9;max-width:640px" class="reveal">${e(bio)}</p></section>` : ""}
+  ${config.sections.includes("about") ? `<section id="about" class="section"><p class="section-heading reveal">about_me</p>${bio ? `<p style="font-size:13px;color:#888;line-height:1.9;max-width:640px" class="reveal">${e(bio)}</p>` : ""}</section>` : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><p class="section-heading reveal">skills_and_tools</p><div class="reveal">${[...langs,...topics].slice(0,16).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></section>` : ""}
   ${config.sections.includes("projects") ? `<section id="projects" class="section"><p class="section-heading reveal">projects</p>${projects.map(p=>`<div class="project-card reveal"><div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="project-name">${e(p.name)}</p>${p.stars>0?`<span style="font-size:11px;color:${c.accent}60" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div><p class="project-desc">${e(stripMd(p.description))}</p><div class="project-meta">${p.language?`<span class="project-lang">${e(p.language)}</span>`:""}<a href="${safeUrl(p.url)}" target="_blank" rel="noopener" class="project-link" aria-label="View ${e(p.name)} on GitHub">open &rarr;</a></div></div>`).join("")}</section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}

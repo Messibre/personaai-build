@@ -20,7 +20,7 @@ export function buildBentoGrid(data: TemplateData): string {
   const c = getColorScheme(config.colorScheme, "midnight")
   const name = profile.name || profile.username
   const role = data.targetRole || "Developer"
-  const bio = aiBio || profile.bio || "Building delightful products."
+  const bio = aiBio || profile.bio || ""
   const langs = getLangs(repos)
   const topics = getTopics(repos)
   const img = safeImageSrc(data.photoUrl || profile.avatar_url)
@@ -92,7 +92,7 @@ export function buildBentoGrid(data: TemplateData): string {
       </div>
       <div class="bento-cell bento-bio hero-anim">
         <p class="section-label">About</p>
-        <p style="font-size:14px;color:#888;line-height:1.8">${e(bio)}</p>
+        ${bio ? `<p style="font-size:14px;color:#888;line-height:1.8">${e(bio)}</p>` : ""}
       </div>
       <div class="bento-cell bento-stats hero-anim">
         <div style="font-size:2.5rem;font-weight:800;color:${c.accent}">${profile.public_repos}</div>
