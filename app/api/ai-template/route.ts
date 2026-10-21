@@ -1,10 +1,6 @@
 import { buildPortfolioHtml } from "@/lib/templates"
 import type { AIProject, SocialLinks, PortfolioConfig, ColorScheme, SectionId, TemplateStyle, GitHubProfile, GitHubRepo } from "@/lib/types"
-
-const GEMINI_KEYS = [
-  process.env.GEMINI_API_KEY_1,
-  process.env.GEMINI_API_KEY_2,
-].filter(Boolean) as string[]
+import { getLLMClient } from "@/lib/llm"
 
 // The design config AI picks from
 interface AIDesignConfig {
@@ -32,37 +28,18 @@ interface AITemplateRequest {
 }
 
 async function callGemini(prompt: string): Promise<string | null> {
-  if (GEMINI_KEYS.length === 0) return null
+  const client = getLLMClient()
+  const result = await client.generate({
+    system: `You are a creative director deciding the best visual design for a developer portfolio. 
+You output ONLY a valid JSON object. No markdown, no backticks, no explanation. Just raw JSON.`,
+    prompt,
+    maxOutputTokens: 512,
+    responseMimeType: "application/json",
+  })
 
-  for (const key of GEMINI_KEYS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{
-              text: `You are a creative director deciding the best visual design for a developer portfolio. 
-You output ONLY a valid JSON object. No markdown, no backticks, no explanation. Just raw JSON.`
-            }]
-          },
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 512,
-          },
-        }),
-        signal: AbortSignal.timeout(8000),
-      })
-
-      if (!res.ok) continue
-      const data = await res.json()
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-      if (text && text.length > 10) return text
-    } catch {
-      continue
-    }
+  if (result.ok) {
+    const text = result.text.trim()
+    if (text.length > 10) return text
   }
   return null
 }

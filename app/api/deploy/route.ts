@@ -48,6 +48,11 @@ async function waitForReady(deploymentId: string, token: string, maxWaitMs = 900
 }
 
 export async function POST(request: Request) {
+  return Response.json({ error: "Deploy is temporarily disabled." }, { status: 404 })
+}
+
+// Not called while deploy is disabled; kept intact for re-enabling in Lesson 14 (login + rate limiting).
+async function deployToVercel(request: Request) {
   try {
     const token = process.env.VERCEL_TOKEN
     if (!token) {
@@ -140,13 +145,17 @@ export async function POST(request: Request) {
     // Poll until READY (up to 90 seconds)
     const readyUrl = await waitForReady(deploymentId, token)
 
-    return Response.json({
-      success: true,
-      url: readyUrl || immediateUrl,
-      deploymentId,
-      projectName: safeName,
-      ready: !!readyUrl,
-    })
+    // return Response.json({
+    //   success: true,
+    //   url: readyUrl || immediateUrl,
+    //   deploymentId,
+    //   projectName: safeName,
+    //   ready: !!readyUrl,
+    // })
+    // Temporarily disabled until Lesson 14 adds login + rate limiting.
+
+    return Response.json({ error: "Deploy is temporarily disabled." }, { status: 404 })
+
   } catch (err) {
     const message = err instanceof Error ? err.message : "Deployment failed"
     return Response.json({ error: message }, { status: 500 })

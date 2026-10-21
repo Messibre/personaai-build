@@ -4,7 +4,7 @@
 
 PersonaAI is an AI-powered portfolio generator that creates beautiful, responsive, and professional portfolio websites. Simply connect your GitHub profile, upload your resume, and let AI craft a personalized portfolio that showcases your work. When you're ready, deploy it live to Vercel instantly.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Messibre/v0-personaai-build)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Messibre/personaai-build)
 
 ## Features
 
@@ -95,8 +95,8 @@ Get your Vercel token from [Vercel Account Settings](https://vercel.com/account/
 
 ```bash
 # Clone the repository
-git clone https://github.com/Messibre/v0-personaai-build.git
-cd v0-personaai-build
+git clone https://github.com/Messibre/personaai-build.git
+cd personaai-build
 
 # Install dependencies
 pnpm install
@@ -171,4 +171,3 @@ MIT
 
 ---
 
-<a href="https://v0.app/chat/api/kiro/clone/Messibre/v0-personaai-build" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
