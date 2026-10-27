@@ -47,12 +47,9 @@ async function waitForReady(deploymentId: string, token: string, maxWaitMs = 900
   return null
 }
 
-export async function POST(request: Request) {
-  return Response.json({ error: "Deploy is temporarily disabled." }, { status: 404 })
-}
+const MAX_HTML_BYTES = 2 * 1024 * 1024
 
-// Not called while deploy is disabled; kept intact for re-enabling in Lesson 14 (login + rate limiting).
-async function deployToVercel(request: Request) {
+export async function POST(request: Request) {
   try {
     const token = process.env.VERCEL_TOKEN
     if (!token) {
@@ -64,8 +61,12 @@ async function deployToVercel(request: Request) {
 
     const { html, projectName = "portfolio" }: DeployRequest = await request.json()
 
-    if (!html || html.length < 100) {
+    if (typeof html !== "string" || html.length < 100) {
       return Response.json({ error: "Invalid HTML content" }, { status: 400 })
+    }
+
+    if (Buffer.byteLength(html, "utf-8") > MAX_HTML_BYTES) {
+      return Response.json({ error: "Portfolio HTML is too large to deploy" }, { status: 413 })
     }
 
     // Clean slug: only lowercase letters and hyphens, max 52 chars
@@ -145,17 +146,13 @@ async function deployToVercel(request: Request) {
     // Poll until READY (up to 90 seconds)
     const readyUrl = await waitForReady(deploymentId, token)
 
-    // return Response.json({
-    //   success: true,
-    //   url: readyUrl || immediateUrl,
-    //   deploymentId,
-    //   projectName: safeName,
-    //   ready: !!readyUrl,
-    // })
-    // Temporarily disabled until Lesson 14 adds login + rate limiting.
-
-    return Response.json({ error: "Deploy is temporarily disabled." }, { status: 404 })
-
+    return Response.json({
+      success: true,
+      url: readyUrl || immediateUrl,
+      deploymentId,
+      projectName: safeName,
+      ready: !!readyUrl,
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Deployment failed"
     return Response.json({ error: message }, { status: 500 })
