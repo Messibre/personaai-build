@@ -10,7 +10,7 @@ export interface GeminiClientConfig {
 }
 
 const DEFAULT_MODEL = "gemini-2.5-flash"
-const DEFAULT_TIMEOUT_MS = 10_000
+const DEFAULT_TIMEOUT_MS = 30_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_BACKOFF_MS = 300
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -34,7 +34,7 @@ export class GeminiClient implements LLMClient {
     // Deduplicate non-empty trimmed keys
     this.keys = Array.from(new Set(rawKeys.map((k) => k.trim()).filter((k) => k.length > 0)))
     this.model = config.model || process.env.GEMINI_MODEL || DEFAULT_MODEL
-    this.timeoutMs = config.timeoutMs ?? (process.env.LLM_TIMEOUT_MS ? Number(process.env.LLM_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS)
+    this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS
     this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES
     this.backoffMs = config.backoffMs ?? DEFAULT_BACKOFF_MS
     this.fetchFn = config.fetchFn ?? globalThis.fetch
@@ -100,6 +100,7 @@ export class GeminiClient implements LLMClient {
           temperature: number
           maxOutputTokens: number
           responseMimeType?: string
+          thinkingConfig?: { thinkingBudget: number }
         }
         systemInstruction?: { parts: Array<{ text: string }> }
       } = {
@@ -112,6 +113,8 @@ export class GeminiClient implements LLMClient {
           temperature: 0.7,
           maxOutputTokens: req.maxOutputTokens,
           ...(req.responseMimeType ? { responseMimeType: req.responseMimeType } : {}),
+          // 2.5 Flash thinking tokens eat the output budget and push large prompts past the timeout.
+          ...(this.model.includes("flash") ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
         },
       }
 
