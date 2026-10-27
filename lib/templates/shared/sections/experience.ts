@@ -47,39 +47,8 @@ export function buildExperience(aiResume: { summary?: string; highlights?: strin
     if (current && items.length < 4) items.push(current)
   }
 
-  // Fallback: real-looking entries using well-known tech companies
-  const FALLBACK_ENTRIES = [
-    {
-      title: "Senior Software Engineer",
-      org: "Stripe",
-      period: "2022 – Present",
-      bullets: [
-        "Led development of payment flow optimisations that reduced checkout drop-off by 18%",
-        "Mentored three junior engineers through code review, pairing sessions, and RFC feedback",
-        "Drove adoption of end-to-end testing across the team, increasing coverage from 42% to 81%",
-      ],
-    },
-    {
-      title: "Software Engineer",
-      org: "Vercel",
-      period: "2020 – 2022",
-      bullets: [
-        "Built and shipped full-stack features for the dashboard used by over 800k developers",
-        "Collaborated with design and product to redesign the deployment logs UI, cutting TTFB by 30%",
-        "Maintained public-facing SDKs and responded to community issues on GitHub",
-      ],
-    },
-    {
-      title: "Junior Developer",
-      org: "Shopify",
-      period: "2019 – 2020",
-      bullets: [
-        "Developed internal tooling to automate merchant onboarding, saving the ops team ~6 hours per week",
-        "Contributed bug fixes and documentation improvements to open-source Ruby gems",
-      ],
-    },
-  ]
-  const entries = items.length > 0 ? items : FALLBACK_ENTRIES
+  if (items.length === 0) return ""
+  const entries = items
 
   return `
   <section id="experience" class="section">

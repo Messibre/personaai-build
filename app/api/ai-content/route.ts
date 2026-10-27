@@ -671,33 +671,18 @@ function buildFallbackAboutMe(profile: GitHubProfile | null, repos: GitHubRepo[]
     return `${profile.bio.endsWith(".") ? profile.bio : `${profile.bio}.`}${langs.length ? ` I primarily work in ${langs.join(", ")}.` : ""}${topRepo && topRepo.stargazers_count > 1 ? ` My most-starred project is ${topRepo.name} with ${topRepo.stargazers_count} stars.` : ""}`
   }
 
-  const bios = [
-    `I'm ${name}, a software developer with ${repoCount} public projects on GitHub.${langs.length ? ` Most of my work is in ${langs.join(", ")}.` : ""}${topRepo ? ` My most recognised project is ${topRepo.name}.` : ""} I care about writing code that is clear, well-tested, and easy to maintain.`,
-    `Software developer focused on ${langs[0] || "building"} ${langs[1] ? `and ${langs[1]} ` : ""}projects, currently targeting ${targetRole} roles.${topRepo && topRepo.stargazers_count > 1 ? ` ${topRepo.name} is one of my most-starred open-source contributions.` : ""} I enjoy turning well-defined problems into reliable, readable code.`,
-    `I build software${langs.length ? ` in ${langs.join(", ")}` : ""}${repoCount ? ` and share most of it publicly across ${repoCount} GitHub repositories` : ""}. My work spans${topRepo ? ` projects like ${topRepo.name}` : " utilities and experiments"} to tooling that solves real workflow problems. I value clean interfaces and clear documentation.`,
-    `${name} here — developer, open-source contributor, and habitual over-committer.${langs.length ? ` I spend most of my time in ${langs.slice(0, 2).join(" and ")}.` : ""} I believe the best code is the code you never have to explain twice.`,
-    `I'm a developer who enjoys working across the stack${langs.length ? `, primarily with ${langs.join(", ")}` : ""}.${repoCount ? ` I have ${repoCount} projects on GitHub` : ""} and I am always looking for interesting problems to solve with well-crafted, maintainable software.`,
+  const facts = [
+    `I'm ${name}, a developer targeting ${targetRole} roles${repoCount ? ` with ${repoCount} public repositories on GitHub` : ""}.`,
+    langs.length ? `Most of my work is in ${langs.join(", ")}.` : "",
+    topRepo ? `My most-starred project is ${topRepo.name}${topRepo.stargazers_count > 0 ? ` (${topRepo.stargazers_count} stars)` : ""}.` : "",
   ]
-
-  const index = (profile.username?.charCodeAt(0) ?? 0) % bios.length
-  return bios[index]
+  return facts.filter(Boolean).join(" ")
 }
 
 /** Build a real-feeling hero tagline. */
 function buildFallbackTagline(profile: GitHubProfile | null, repos: GitHubRepo[], targetRole: string): string {
   const langs = [...new Set(repos.filter((r) => !r.fork && r.language).map((r) => r.language as string))].slice(0, 2)
-  const name = profile?.name || profile?.username
-
-  const taglines = [
-    `${targetRole}${langs.length ? ` — ${langs[0]}` : ""}`,
-    `Building reliable software${langs.length ? ` with ${langs.join(" and ")}` : ""}`,
-    `${targetRole} who writes code that lasts`,
-    `Open-source developer${langs.length ? `, specialising in ${langs[0]}` : ""}`,
-    `${name ? `${name} — ` : ""}${targetRole} & open-source contributor`,
-  ]
-
-  const index = (profile?.username?.charCodeAt(1) ?? 0) % taglines.length
-  return taglines[index]
+  return `${targetRole}${langs.length ? ` · ${langs.join(" & ")}` : ""}`
 }
 
 // Lightweight resume summarizer (used when AI doesn't return a resume section)
