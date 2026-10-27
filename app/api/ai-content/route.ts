@@ -9,6 +9,9 @@ import { enrichReposForAI } from "@/lib/github";
 import { getLLMClient } from "@/lib/llm";
 import * as cheerio from "cheerio";
 
+// One slow Gemini call plus a single non-JSON retry must fit inside the function limit.
+export const maxDuration = 90;
+
 interface AIContentRequest {
   targetRole: string;
   externalLinks: string[];
@@ -142,7 +145,7 @@ async function callGemini(
   const result = await client.generate({
     system: systemPrompt,
     prompt,
-    maxOutputTokens: 2000,
+    maxOutputTokens: 4096,
     responseMimeType: expectJson ? "application/json" : undefined,
   });
   const durationMs = Date.now() - startedAt;

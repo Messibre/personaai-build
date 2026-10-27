@@ -16,6 +16,18 @@ const envConfigSchema = z.object({
 
 export type LLMEnvConfig = z.infer<typeof envConfigSchema>
 
+// Gemini 2.5 Flash routinely needs 10–20s for full portfolio copy; 10s caused silent fallbacks.
+export const DEFAULT_LLM_TIMEOUT_MS = 30_000
+
+/** Reads LLM_TIMEOUT_MS or GEMINI_TIMEOUT_MS; empty or invalid values are ignored. */
+export function readTimeoutEnv(): number | undefined {
+  for (const raw of [process.env.LLM_TIMEOUT_MS, process.env.GEMINI_TIMEOUT_MS]) {
+    const value = Number(raw?.trim())
+    if (raw?.trim() && Number.isFinite(value) && value > 0) return value
+  }
+  return undefined
+}
+
 export function parseLLMEnv(): LLMEnvConfig {
   const rawProvider = (process.env.LLM_PROVIDER || "gemini").toLowerCase().trim()
   const provider = rawProvider === "mock" ? "mock" : "gemini"
@@ -31,7 +43,7 @@ export function parseLLMEnv(): LLMEnvConfig {
   return envConfigSchema.parse({
     provider,
     model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-    timeoutMs: process.env.LLM_TIMEOUT_MS ? Number(process.env.LLM_TIMEOUT_MS) : 10_000,
+    timeoutMs: readTimeoutEnv() ?? DEFAULT_LLM_TIMEOUT_MS,
     geminiKeys,
   })
 }
