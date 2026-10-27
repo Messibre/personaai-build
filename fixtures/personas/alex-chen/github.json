@@ -1,0 +1,50 @@
+{
+  "profile": {
+    "username": "alexchen-ui",
+    "name": "Alex Chen",
+    "bio": "Staff Frontend Engineer & Creative Technologist. Building resilient design systems and fluid interactive experiences.",
+    "avatar_url": "https://avatars.githubusercontent.com/u/10293847?v=4",
+    "followers": 1420,
+    "following": 180,
+    "public_repos": 42,
+    "html_url": "https://github.com/alexchen-ui",
+    "location": "San Francisco, CA",
+    "blog": "https://alexchen.dev",
+    "company": "DesignOS"
+  },
+  "repos": [
+    {
+      "name": "canvas-flow",
+      "description": "GPU-accelerated infinite canvas and diagramming engine built with WebGL and React",
+      "language": "TypeScript",
+      "stargazers_count": 3840,
+      "forks_count": 290,
+      "html_url": "https://github.com/alexchen-ui/canvas-flow",
+      "fork": false,
+      "topics": ["canvas", "webgl", "react", "diagrams", "typescript"],
+      "homepage": "https://canvasflow.dev"
+    },
+    {
+      "name": "motion-tokens",
+      "description": "Multi-platform design token compiler with declarative spring animations and WCAG-compliant motion presets",
+      "language": "TypeScript",
+      "stargazers_count": 1250,
+      "forks_count": 84,
+      "html_url": "https://github.com/alexchen-ui/motion-tokens",
+      "fork": false,
+      "topics": ["design-systems", "tokens", "animation", "css", "a11y"],
+      "homepage": "https://motion-tokens.alexchen.dev"
+    },
+    {
+      "name": "headless-tree-grid",
+      "description": "High-performance virtualized tree-grid primitive for hierarchical data tables with 100k+ rows",
+      "language": "TypeScript",
+      "stargazers_count": 940,
+      "forks_count": 62,
+      "html_url": "https://github.com/alexchen-ui/headless-tree-grid",
+      "fork": false,
+      "topics": ["react", "virtualization", "datagrid", "headless-ui"],
+      "homepage": "https://alexchen-ui.github.io/headless-tree-grid"
+    }
+  ]
+}
