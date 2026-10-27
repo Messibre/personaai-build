@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { GitHubImportCard } from "@/components/vault/github-import-card"
 import { ProjectList } from "@/components/vault/project-list"
@@ -56,6 +56,20 @@ export function ImportPanel() {
     [vault, idParam, router],
   )
 
+  const vaultRef = useRef<Vault | null>(null)
+  useEffect(() => {
+    vaultRef.current = vault
+  }, [vault])
+
+  const commitVault = useCallback(async (update: (current: Vault) => Vault) => {
+    const current = vaultRef.current
+    if (!current) return
+    const next = update(current)
+    await saveVault(next)
+    vaultRef.current = next
+    setVault(next)
+  }, [])
+
   const blocked = loading || loadError !== null
 
   return (
@@ -76,7 +90,7 @@ export function ImportPanel() {
         <ResumeImportCard disabled={blocked} onImport={applyImport} />
       </div>
 
-      {vault ? <ProjectList vault={vault} /> : null}
+      {vault ? <ProjectList vault={vault} onChangeVault={commitVault} /> : null}
     </div>
   )
 }

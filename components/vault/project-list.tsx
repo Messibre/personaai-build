@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { QuestionsPanel } from "@/components/vault/questions-panel"
 import { countFacts, countVaultFacts } from "@/lib/ingest/summary"
 import type { Vault } from "@/lib/schemas/vault"
 
@@ -9,7 +10,13 @@ function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`
 }
 
-export function ProjectList({ vault }: { vault: Vault }) {
+export function ProjectList({
+  vault,
+  onChangeVault,
+}: {
+  vault: Vault
+  onChangeVault?: (update: (vault: Vault) => Vault) => Promise<void>
+}) {
   const totals = countVaultFacts(vault)
   const isEmpty = vault.projects.length === 0 && vault.experience.length === 0 && vault.skills.length === 0
 
@@ -69,6 +76,7 @@ export function ProjectList({ vault }: { vault: Vault }) {
                       ) : null}
                     </CardContent>
                   ) : null}
+                  {onChangeVault ? <QuestionsPanel project={project} onChangeVault={onChangeVault} /> : null}
                 </Card>
               </li>
             )
