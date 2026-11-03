@@ -1,5 +1,13 @@
 # Job Match
 
-Job Match accepts pasted job text or a public job URL, validates a structured analysis with the existing Gemini client, and compares requirements against GitHub repository metadata/README evidence and supplied resume text. Matching is deterministic: a requirement is only `covered` when a real project or resume line contains the requirement or one of its extracted synonyms.
+Job Match accepts pasted job text or a public job URL and compares it with evidence from a required public GitHub username plus optional resume text.
 
-Run the app with `pnpm dev`, then open `/job-match`. The API is `POST /api/job-match` with `jobText` or `jobUrl`, plus optional `githubUsername` and `resumeText`. The existing repository has no authentication/session persistence layer, so these source fields are supplied by the page rather than inferred.
+The pipeline is deterministic and does not call an LLM:
+
+1. Job text is cleaned and split into sections.
+2. A local skill taxonomy identifies requirements, tiers, role type, and values.
+3. GitHub repositories are fetched with one GraphQL request and normalized into evidence from languages, topics, descriptions, README text, manifests, Docker, and workflows.
+4. Evidence is scored by source strength and recency. Results are cached in process memory for six hours, with the refresh button bypassing that cache.
+5. Projects and requirements are ranked from exact evidence. No evidence is never reported as covered.
+
+Run `pnpm dev` and open `/job-match`. The API is `POST /api/job-match` with `jobText` or `jobUrl`, required `githubUsername`, optional `resumeText`, and optional `refresh`. Set `GITHUB_TOKEN` on deployments to improve GitHub API rate limits; only public repositories are requested.

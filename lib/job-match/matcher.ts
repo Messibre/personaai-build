@@ -1,109 +1,70 @@
-import type { EnrichedGitHubRepo } from "../types"
-import type { JobAnalysis, JobProject, ProjectInput, RequirementCheck, SelectedProject } from "./types"
+import type { EvidenceItem, JobAnalysis, RequirementCheck, SelectedProject, ProfileEvidence } from "./types"
 
-const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").trim()
+const related = new Map([
+  ["react", ["next.js", "javascript", "typescript", "jsx"]],
+  ["next.js", ["react", "javascript", "typescript"]],
+  ["machine-learning", ["python", "pytorch", "tensorflow"]],
+  ["llm", ["openai", "rag", "embeddings", "python"]],
+  ["docker", ["kubernetes", "ci-cd", "deployment"]],
+  ["kubernetes", ["docker", "ci-cd", "cloud"]],
+  ["accessibility", ["html", "ux", "ui"]],
+  ["typescript", ["javascript", "react", "node.js"]],
+])
 
-function buildProjects({ githubRepos, resumeText }: ProjectInput): JobProject[] {
-  const github = githubRepos.map((repo) => ({
-    id: `github:${repo.name}`,
-    name: repo.name,
-    source: "github" as const,
-    url: repo.html_url,
-    evidence: [
-      repo.description ? `GitHub description: ${repo.description}` : "",
-      repo.language ? `GitHub language: ${repo.language}` : "",
-      repo.topics.length ? `GitHub topics: ${repo.topics.join(", ")}` : "",
-      repo.detectedTech ? `Detected repository technology: ${repo.detectedTech}` : "",
-      repo.readmeText ? `README: ${repo.readmeText}` : "",
-    ].filter(Boolean),
-    searchableText: normalize([repo.name, repo.description, repo.language, repo.topics.join(" "), repo.detectedTech, repo.readmeText].filter(Boolean).join(" ")),
-  }))
-  const resume = resumeText.trim()
-    ? [{
-        id: "resume:projects",
-        name: "Resume projects",
-        source: "resume" as const,
-        evidence: resumeText.split(/\n+/).map((line) => line.trim()).filter(Boolean).slice(0, 80),
-        searchableText: normalize(resumeText),
-      }]
-    : []
-  return [...github, ...resume]
+function evidenceFor(items: EvidenceItem[], skillId: string): EvidenceItem[] {
+  return items.filter((item) => item.skill === skillId)
 }
 
-function requirementTerms(requirement: { label: string; synonyms: string[] }): string[] {
-  return [requirement.label, ...requirement.synonyms].map(normalize).filter(Boolean)
+function partialEvidence(items: EvidenceItem[], skillId: string): EvidenceItem[] {
+  const skills = related.get(skillId) || []
+  return items.filter((item) => skills.includes(item.skill))
 }
 
-function evidenceFor(project: JobProject, requirement: { label: string; synonyms: string[] }): string[] {
-  const terms = requirementTerms(requirement)
-  return project.evidence.filter((evidence) => terms.some((term) => normalize(evidence).includes(term)))
-}
-
-export function selectProjects(input: ProjectInput, analysis: JobAnalysis): SelectedProject[] {
+export function selectProjects(profile: ProfileEvidence, resumeItems: EvidenceItem[], analysis: JobAnalysis): SelectedProject[] {
+  const all = [...profile.items, ...resumeItems]
   const requirements = [...analysis.mustHaveRequirements, ...analysis.niceToHaveRequirements]
-  const projects = buildProjects(input)
-  const ranked = projects.map((project) => {
-    const matches = requirements.flatMap((requirement) => evidenceFor(project, requirement).length ? [requirement] : [])
-    const mustMatches = matches.filter((requirement) => requirement.priority === "must-have").length
-    const niceMatches = matches.filter((requirement) => requirement.priority === "nice-to-have").length
-    const evidence = [...new Set(matches.flatMap((requirement) => evidenceFor(project, requirement)))]
-    return {
-      project,
-      score: mustMatches * 20 + niceMatches * 8,
-      covers: matches.map((requirement) => requirement.label),
-      evidence,
-      reason: matches.length ? `Shows evidence for ${matches.map((requirement) => requirement.label).join(", ")} in this job.` : "",
-    }
-  }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score)
-
+  const ranked = profile.projects.map((project) => {
+    const items = all.filter((item) => item.projectId === project.id)
+    const covers = requirements.filter((requirement) => evidenceFor(items, requirement.skillId).length)
+    const score = covers.reduce((sum, requirement) => sum + (requirement.tier === "must" ? 20 : 8), 0) + items.reduce((sum, item) => sum + item.strength, 0)
+    const evidence = covers.flatMap((requirement) => evidenceFor(items, requirement.skillId).slice(0, 2).map((item) => item.snippet))
+    return { project: { id: project.id, name: project.name, url: project.url }, score: Math.round(score * 10) / 10, covers: covers.map((requirement) => requirement.label), evidence: [...new Set(evidence)], reason: `Best evidence for ${covers.map((requirement) => requirement.label).join(", ")} in this job.` }
+  }).filter((item) => item.covers.length).sort((a, b) => b.score - a.score)
   const selected: SelectedProject[] = []
   const covered = new Set<string>()
-  for (const item of ranked) {
-    const addsCoverage = item.covers.some((label) => !covered.has(label))
-    if (addsCoverage || selected.length < 2) {
-      selected.push(item)
-      item.covers.forEach((label) => covered.add(label))
+  for (const project of ranked) {
+    if (project.covers.some((label) => !covered.has(label)) || selected.length < 2) {
+      selected.push(project)
+      project.covers.forEach((label) => covered.add(label))
     }
-    if (selected.length === 4) break
+    if (selected.length >= 4) break
   }
   return selected
 }
 
-export function checkRequirements(input: ProjectInput, analysis: JobAnalysis): { checks: RequirementCheck[]; summary: { mustHave: { covered: number; partial: number; missing: number }; totalRequirements: number } } {
-  const projects = buildProjects(input)
+export function checkRequirements(profile: ProfileEvidence, resumeItems: EvidenceItem[], analysis: JobAnalysis): { checks: RequirementCheck[]; summary: { mustHave: { covered: number; partial: number; missing: number }; totalRequirements: number } } {
+  const all = [...profile.items, ...resumeItems]
   const checks = [...analysis.mustHaveRequirements, ...analysis.niceToHaveRequirements].map((requirement) => {
-    const direct = projects.flatMap((project) => evidenceFor(project, requirement).map((evidence) => ({ project, evidence })))
-    if (direct.length) {
-      return {
-        requirement,
-        status: "covered" as const,
-        evidence: [...new Set(direct.map((item) => item.evidence))],
-        projects: [...new Set(direct.map((item) => item.project.name))],
-        explanation: "Your projects contain direct evidence for this requirement.",
-      }
-    }
-    const related = projects.filter((project) => {
-      const words = requirementTerms(requirement).flatMap((term) => term.split(" ").filter((word) => word.length > 3))
-      return words.some((word) => project.searchableText.includes(word))
-    })
+    const direct = evidenceFor(all, requirement.skillId)
+    const nearby = direct.length ? [] : partialEvidence(all, requirement.skillId)
+    const evidence = (direct.length ? direct : nearby).slice(0, 5)
+    const status = direct.length ? "covered" : nearby.length ? "partial" : "missing"
     return {
       requirement,
-      status: related.length ? "partial" as const : "missing" as const,
-      evidence: related.flatMap((project) => project.evidence.slice(0, 1)),
-      projects: related.map((project) => project.name),
-      explanation: related.length
-        ? `Related evidence exists in ${related.map((project) => project.name).join(", ")}, but it does not directly show ${requirement.label}.`
-        : `Nothing in your projects or resume mentions ${requirement.label}.`,
+      status: status as RequirementCheck["status"],
+      evidence: evidence.map((item) => item.snippet),
+      projects: [...new Set(evidence.map((item) => item.projectName))],
+      explanation: direct.length ? "Your project or resume contains direct evidence for this requirement." : nearby.length ? `Related evidence exists in ${[...new Set(nearby.map((item) => item.projectName))].join(", ")}, but it does not directly show ${requirement.label}.` : `Nothing in your projects or resume supports ${requirement.label}.`,
     }
   })
-  const mustHave = checks.filter((check) => check.requirement.priority === "must-have")
+  const must = checks.filter((check) => check.requirement.tier === "must")
   return {
     checks,
     summary: {
       mustHave: {
-        covered: mustHave.filter((check) => check.status === "covered").length,
-        partial: mustHave.filter((check) => check.status === "partial").length,
-        missing: mustHave.filter((check) => check.status === "missing").length,
+        covered: must.filter((check) => check.status === "covered").length,
+        partial: must.filter((check) => check.status === "partial").length,
+        missing: must.filter((check) => check.status === "missing").length,
       },
       totalRequirements: checks.length,
     },

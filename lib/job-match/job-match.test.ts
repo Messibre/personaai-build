@@ -3,41 +3,32 @@ import test from "node:test"
 import { analyzeJob } from "./analyzer"
 import { fetchJobPosting, validateJobUrl } from "./fetch-job"
 import { checkRequirements } from "./matcher"
-import type { JobAnalysis } from "./types"
+import type { ProfileEvidence } from "./types"
 
-const analysis: JobAnalysis = {
-  roleTitle: "Frontend Engineer",
-  roleType: "frontend",
-  mustHaveRequirements: [
-    { label: "React", synonyms: ["React.js"], quote: "Build React applications", priority: "must-have" },
-    { label: "Kubernetes", synonyms: ["K8s"], quote: "Operate Kubernetes workloads", priority: "must-have" },
-  ],
-  niceToHaveRequirements: [],
-  values: ["shipping"],
+const profile: ProfileEvidence = {
+  login: "test-user",
+  fetchedAt: new Date().toISOString(),
+  projects: [{ id: "github:site", name: "site", url: "https://github.com/test/site", evidence: [] }],
+  items: [{ skill: "react", source: "dependency", strength: 1, projectId: "github:site", projectName: "site", snippet: "package.json dependency: react" }],
 }
 
-test("analyzes messy posting JSON through the injected LLM", async () => {
-  const result = await analyzeJob("We need a frontend engineer. Benefits and legal text follow.", async () => JSON.stringify({
-    roleTitle: "Frontend Engineer", roleType: "frontend",
-    mustHaveRequirements: [{ label: "React", synonyms: ["React.js"], quote: "Build React applications", priority: "must-have" }],
-    niceToHaveRequirements: [], values: ["shipping"],
-  }))
+test("extracts requirements deterministically from a messy posting", () => {
+  const result = analyzeJob("Senior Frontend Engineer\n\nRequirements:\n- Strong React and TypeScript experience.\n\nNice to have:\n- Kubernetes familiarity.\n\nBenefits and legal text")
   assert.equal(result.roleType, "frontend")
-  assert.equal(result.mustHaveRequirements[0].label, "React")
+  assert.equal(result.mustHaveRequirements.some((item) => item.skillId === "react"), true)
+  assert.equal(result.niceToHaveRequirements.some((item) => item.skillId === "kubernetes"), true)
 })
 
 test("never marks an unsupported required skill as covered", () => {
-  const result = checkRequirements({
-    githubRepos: [{ name: "site", description: "A React site", language: "TypeScript", stargazers_count: 0, forks_count: 0, html_url: "https://github.com/x/site", fork: false, topics: [], homepage: null, readmeText: "React app", detectedTech: "TypeScript" }],
-    resumeText: "Built a React interface.",
-  }, analysis)
-  assert.equal(result.checks.find((check) => check.requirement.label === "Kubernetes")?.status, "missing")
+  const analysis = analyzeJob("Backend Engineer\nRequirements:\n- Kubernetes experience")
+  const result = checkRequirements(profile, [], analysis)
+  assert.equal(result.checks[0]?.status, "missing")
 })
 
-test("rejects private job URLs and gives a paste fallback when fetching fails", async () => {
-  assert.throws(() => validateJobUrl("http://127.0.0.1/job"), /paste the job description/i)
+test("rejects private URLs and provides paste fallback on fetch failure", async () => {
+  assert.throws(() => validateJobUrl("http://127.0.0.1/job"), /valid|cannot/i)
   const originalFetch = globalThis.fetch
   globalThis.fetch = async () => { throw new Error("network unavailable") }
-  await assert.rejects(() => fetchJobPosting("https://jobs.example.com/posting"), /paste the job description/i)
+  await assert.rejects(() => fetchJobPosting("https://jobs.example.com/posting"), /paste/i)
   globalThis.fetch = originalFetch
 })

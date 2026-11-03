@@ -1,33 +1,52 @@
-import type { EnrichedGitHubRepo } from "@/lib/types"
+export type JobRoleType = "frontend" | "ux-engineer" | "ai-ml" | "fullstack" | "backend" | "devops" | "mobile" | "other"
 
-export type JobRoleType = "frontend" | "ux-engineer" | "ai-ml" | "fullstack" | "backend" | "other"
+export type EvidenceSource = "dependency" | "language" | "topic" | "readme" | "description" | "resume" | "config"
+
+export interface EvidenceItem {
+  skill: string
+  source: EvidenceSource
+  strength: number
+  projectId: string
+  projectName: string
+  snippet: string
+}
+
+export interface ProfileProject {
+  id: string
+  name: string
+  url?: string
+  pushedAt?: string
+  archived?: boolean
+  evidence: EvidenceItem[]
+}
+
+export interface ProfileEvidence {
+  login: string
+  projects: ProfileProject[]
+  items: EvidenceItem[]
+  fetchedAt: string
+}
 
 export interface JobRequirement {
+  skillId: string
   label: string
-  synonyms: string[]
+  aliases: string[]
+  tier: "must" | "nice"
   quote: string
-  priority: "must-have" | "nice-to-have"
+  confidence: number
 }
 
 export interface JobAnalysis {
   roleTitle: string
   roleType: JobRoleType
+  roleMargin: number
   mustHaveRequirements: JobRequirement[]
   niceToHaveRequirements: JobRequirement[]
   values: string[]
 }
 
-export interface JobProject {
-  id: string
-  name: string
-  source: "github" | "resume"
-  url?: string
-  evidence: string[]
-  searchableText: string
-}
-
 export interface SelectedProject {
-  project: JobProject
+  project: { id: string; name: string; url?: string }
   score: number
   covers: string[]
   evidence: string[]
@@ -45,15 +64,6 @@ export interface RequirementCheck {
 }
 
 export interface MatchSummary {
-  mustHave: {
-    covered: number
-    partial: number
-    missing: number
-  }
+  mustHave: { covered: number; partial: number; missing: number }
   totalRequirements: number
-}
-
-export interface ProjectInput {
-  githubRepos: EnrichedGitHubRepo[]
-  resumeText: string
 }
