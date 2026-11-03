@@ -106,6 +106,13 @@ export const applicationSchema = z
     jobTitle: z.string().min(1).max(200),
     company: z.string().max(200).optional(),
     jobTextHash: z.string().regex(/^[a-f0-9]{64}$/, "jobTextHash must be a SHA-256 hex digest"),
+    feedback: z
+      .object({
+        accurate: z.boolean(),
+        note: z.string().max(500).optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
 export type Application = z.infer<typeof applicationSchema>

@@ -16,6 +16,7 @@ import { recordIfGenerated } from "@/lib/tailor/record"
 import { moveItem, toPicksPayload, toSelectable, toggleIncluded, type SelectableProject } from "@/lib/tailor/selection"
 import type { ColorScheme, TemplateStyle } from "@/lib/types"
 import { AnalysisReview } from "./analysis-review"
+import { FeedbackPrompt } from "./feedback-prompt"
 import { JobStep } from "./job-step"
 import { ResultsView } from "./results-view"
 
@@ -219,6 +220,7 @@ export function TailorFlow() {
       {stage === "done" && output && job ? (
         <>
           <ResultsView vault={vault} job={job} output={output} />
+          <FeedbackPrompt key={`${vault.id}:${postingText}`} vault={vault} postingText={postingText} onSaved={setVault} />
           <div>
             <Button type="button" variant="ghost" size="sm" onClick={() => setStage("review")}>
               Back to the match
