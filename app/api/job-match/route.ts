@@ -4,6 +4,10 @@ import { fetchJobPosting } from "@/lib/job-match/fetch-job"
 import { fetchProfileEvidence, resumeEvidence } from "@/lib/job-match/github-evidence"
 import { jobMatchInputSchema } from "@/lib/job-match/schemas"
 import { checkRequirements, selectProjects } from "@/lib/job-match/matcher"
+import { calculateCompatibility } from "@/lib/job-match/report/compatibility"
+import { createLedger } from "@/lib/job-match/report/ledger"
+import { saveLedger } from "@/lib/job-match/report/store"
+import { explainCompatibility } from "@/lib/job-match/ai/explanation"
 
 export const runtime = "nodejs"
 export const maxDuration = 30
@@ -20,7 +24,24 @@ export async function POST(request: Request) {
     const resumeItems = resumeEvidence(input.resumeText || "")
     const selectedProjects = selectProjects(profile, resumeItems, analysis)
     const { checks, summary } = checkRequirements(profile, resumeItems, analysis)
-    return NextResponse.json({ ok: true, analysis, selectedProjects, requirementChecks: checks, summary, profile: { login: profile.login, projectCount: profile.projects.length, fetchedAt: profile.fetchedAt } })
+    const analysisId = crypto.randomUUID()
+    const ledger = createLedger(analysisId, jobText, analysis, checks, selectedProjects, [...profile.items, ...resumeItems])
+    saveLedger(ledger)
+    const compatibility = calculateCompatibility(analysis, checks, selectedProjects, ledger.evidence.length)
+    const explanation = await explainCompatibility(ledger, compatibility)
+    const publicProjects = selectedProjects.map(({ score: _score, ...project }) => project)
+    return NextResponse.json({
+      ok: true,
+      analysis,
+      compatibility,
+      explanation,
+      selectedProjects: publicProjects,
+      requirementChecks: checks,
+      summary,
+      analysisId,
+      profile: { login: profile.login, projectCount: profile.projects.length, fetchedAt: profile.fetchedAt },
+      meta: { aiEnhanced: explanation.aiEnhanced, tasksRun: ["deterministic-analysis", "compatibility", "evidence-ledger", explanation.aiEnhanced ? "ai-explanation" : "template-explanation"], cached: false, fallbackUsed: explanation.fallbackUsed || false },
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Job matching failed. Please try again."
     const code = message.includes("GitHub") ? "GITHUB_ERROR" : message.includes("paste") || message.includes("blocks") ? "FETCH_BLOCKED" : "JOB_MATCH_FAILED"

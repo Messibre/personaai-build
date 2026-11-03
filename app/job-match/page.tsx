@@ -10,9 +10,12 @@ import { Input } from "@/components/ui/input"
 
 type Result = {
   analysis: { roleTitle: string; roleType: string }
-  selectedProjects: Array<{ project: { name: string; url?: string; description?: string; language?: string; topics?: string[]; stars?: number }; score: number; covers: string[]; evidence: string[]; reason: string }>
+  compatibility: { label: string; confidence: string; reasonCodes: string[]; coreGaps: string[] }
+  explanation: { paragraph: string; sentences: Array<{ text: string; evidenceIds: string[]; requirementIds: string[] }> }
+  selectedProjects: Array<{ project: { id: string; name: string; url?: string; description?: string; language?: string; topics?: string[]; stars?: number }; covers: string[]; evidence: string[]; reason: string }>
   requirementChecks: Array<{ requirement: { label: string; tier: string }; status: "covered" | "partial" | "missing"; evidence: string[]; explanation: string }>
   summary: { mustHave: { covered: number; partial: number; missing: number } }
+  analysisId: string
 }
 
 const statusIcon = { covered: CheckCircle2, partial: CircleAlert, missing: MinusCircle }
@@ -25,6 +28,8 @@ export default function JobMatchPage() {
   const [result, setResult] = useState<Result | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [coverLetter, setCoverLetter] = useState("")
+  const [letterLoading, setLetterLoading] = useState(false)
 
   async function analyze(forceRefresh = false) {
     setError("")
@@ -35,6 +40,7 @@ export default function JobMatchPage() {
         setError("Connect your GitHub first by entering your GitHub username.")
         return
       }
+
       let response: Response
       try {
         response = await fetch("/api/job-match", {
@@ -51,18 +57,38 @@ export default function JobMatchPage() {
         console.error("Unexpected Job Match response", response.status)
         throw new Error("Unexpected server response.")
       }
-      const data = await response.json() as { ok?: boolean; error?: { code?: string; message?: string } | string; analysis?: Result["analysis"]; selectedProjects?: Result["selectedProjects"]; requirementChecks?: Result["requirementChecks"]; summary?: Result["summary"] }
+      const data = await response.json() as Partial<Result> & { ok?: boolean; error?: { code?: string; message?: string } | string }
       if (!response.ok || !data.ok) {
         console.error("Job Match API error", response.status, data.error)
         const message = typeof data.error === "string" ? data.error : data.error?.message
         throw new Error(message || `Job matching failed (HTTP ${response.status}).`)
       }
-      if (!data.analysis || !data.selectedProjects || !data.requirementChecks || !data.summary) throw new Error("Unexpected server response.")
-      setResult({ analysis: data.analysis, selectedProjects: data.selectedProjects, requirementChecks: data.requirementChecks, summary: data.summary })
+      if (!data.analysis || !data.compatibility || !data.explanation || !data.selectedProjects || !data.requirementChecks || !data.summary || !data.analysisId) throw new Error("Unexpected server response.")
+      setResult(data as Result)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Job matching failed. Please try again.")
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function generateCoverLetter() {
+    if (!result) return
+    setLetterLoading(true)
+    setError("")
+    try {
+      const response = await fetch("/api/job-match/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analysisId: result.analysisId, options: { tone: "warm", length: "standard", addressGaps: false } }),
+      })
+      const data = await response.json() as { ok?: boolean; text?: string; error?: { message?: string } }
+      if (!response.ok || !data.ok || !data.text) throw new Error(data.error?.message || "Could not generate the cover letter.")
+      setCoverLetter(data.text)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not generate the cover letter.")
+    } finally {
+      setLetterLoading(false)
     }
   }
 
@@ -95,9 +121,10 @@ export default function JobMatchPage() {
         </Card>
 
         {result && <div className="mt-8 space-y-6">
-          <Card><CardHeader><CardTitle>{result.analysis.roleTitle}</CardTitle><CardDescription>{result.analysis.roleType} · {result.summary.mustHave.covered} must-haves covered, {result.summary.mustHave.partial} partial, {result.summary.mustHave.missing} missing</CardDescription></CardHeader></Card>
-          <section><h2 className="mb-3 text-xl font-semibold">Best-fit projects</h2><div className="grid gap-4 md:grid-cols-2">{result.selectedProjects.length ? result.selectedProjects.map((item) => <Card key={item.project.name}><CardHeader><CardTitle>{item.project.url ? <a href={item.project.url} target="_blank" rel="noreferrer" className="hover:underline">{item.project.name}</a> : item.project.name}</CardTitle><CardDescription>Match score: {item.score} · Covers: {item.covers.join(", ")}</CardDescription></CardHeader><CardContent><p className="text-sm">{item.project.description || "Public GitHub repository"}</p><p className="mt-2 text-xs text-muted-foreground">{[item.project.language, item.project.stars !== undefined ? `${item.project.stars} stars` : "", ...(item.project.topics || []).slice(0, 5)].filter(Boolean).join(" · ")}</p><p className="mt-3 text-sm">{item.reason}</p><ul className="mt-3 space-y-2 text-xs text-muted-foreground">{item.evidence.map((evidence, evidenceIndex) => <li key={`${evidence}-${evidenceIndex}`} className="rounded-md bg-muted/40 px-3 py-2">{evidence}</li>)}</ul></CardContent></Card>) : <Card><CardContent className="pt-6 text-sm text-muted-foreground">No projects matched directly. Add a GitHub username or resume text to compare your evidence.</CardContent></Card>}</div></section>
+          <Card><CardHeader><div className="flex flex-wrap items-center gap-3"><CardTitle>{result.analysis.roleTitle}</CardTitle><span className="rounded-full bg-[var(--persona-accent)]/15 px-3 py-1 text-sm text-[var(--persona-accent)]">{result.compatibility.label}</span><span className="rounded-full bg-muted px-3 py-1 text-xs uppercase tracking-wide text-muted-foreground">{result.compatibility.confidence} confidence</span></div><CardDescription>{result.analysis.roleType} · {result.summary.mustHave.covered} must-haves covered, {result.summary.mustHave.partial} partial, {result.summary.mustHave.missing} missing</CardDescription></CardHeader><CardContent><p className="text-sm leading-6">{result.explanation.paragraph}</p><details className="mt-4"><summary className="cursor-pointer text-sm font-medium">Why this label?</summary><ul className="mt-3 space-y-2 text-sm text-muted-foreground">{result.compatibility.reasonCodes.map((code) => <li key={code}>{code.replaceAll("_", " ").replace("CORE GAP:", "Core gap: ")}</li>)}</ul></details></CardContent></Card>
+          <section><h2 className="mb-3 text-xl font-semibold">Best-fit projects</h2><div className="grid gap-4 md:grid-cols-2">{result.selectedProjects.length ? result.selectedProjects.map((item) => <Card key={item.project.name}><CardHeader><CardTitle>{item.project.url ? <a href={item.project.url} target="_blank" rel="noreferrer" className="hover:underline">{item.project.name}</a> : item.project.name}</CardTitle><CardDescription>Covers: {item.covers.join(", ")}</CardDescription></CardHeader><CardContent><p className="text-sm">{item.project.description || "Public GitHub repository"}</p><p className="mt-2 text-xs text-muted-foreground">{[item.project.language, item.project.stars !== undefined ? `${item.project.stars} stars` : "", ...(item.project.topics || []).slice(0, 5)].filter(Boolean).join(" · ")}</p><p className="mt-3 text-sm">{item.reason}</p><ul className="mt-3 space-y-2 text-xs text-muted-foreground">{item.evidence.map((evidence, evidenceIndex) => <li key={`${evidence}-${evidenceIndex}`} className="rounded-md bg-muted/40 px-3 py-2">{evidence}</li>)}</ul></CardContent></Card>) : <Card><CardContent className="pt-6 text-sm text-muted-foreground">No projects matched directly. Add a GitHub username or resume text to compare your evidence.</CardContent></Card>}</div></section>
           <section><h2 className="mb-3 text-xl font-semibold">Requirement checklist</h2><div className="space-y-3">{result.requirementChecks.map((check) => { const Icon = statusIcon[check.status]; return <Card key={`${check.requirement.tier}-${check.requirement.label}`}><CardContent className="flex gap-3 pt-6"><Icon className={`mt-0.5 size-5 shrink-0 ${check.status === "covered" ? "text-emerald-500" : check.status === "partial" ? "text-amber-500" : "text-muted-foreground"}`} /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-medium">{check.requirement.label}</p><span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{check.requirement.tier}</span><span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{check.status}</span></div><p className="mt-1 text-sm text-muted-foreground">{check.explanation}</p>{check.evidence.length > 0 && <ul className="mt-3 space-y-2 text-xs text-muted-foreground">{check.evidence.slice(0, 4).map((evidence, evidenceIndex) => <li key={`${evidence}-${evidenceIndex}`} className="rounded-md bg-muted/40 px-3 py-2">{evidence}</li>)}</ul>}</div></CardContent></Card> })}</div></section>
+          <Card><CardHeader><CardTitle>Cover letter</CardTitle><CardDescription>Generated only from the verified GitHub and resume evidence in this analysis.</CardDescription></CardHeader><CardContent className="space-y-3"><Button onClick={generateCoverLetter} disabled={letterLoading}>{letterLoading ? "Generating..." : "Generate cover letter"}</Button>{coverLetter && <><Textarea value={coverLetter} onChange={(event) => setCoverLetter(event.target.value)} className="min-h-72" /><p className="text-xs text-muted-foreground">Review before sending. Only verified evidence was used.</p></>}</CardContent></Card>
         </div>}
       </div>
     </main>

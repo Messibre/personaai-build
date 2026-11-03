@@ -98,7 +98,7 @@ function parseGeminiResponse(value: string): JobAnalysis {
 
 export async function analyzeJob(jobText: string): Promise<JobAnalysis> {
   const fallback = deterministicAnalysis(jobText)
-  if (!process.env.GEMINI_API_KEY_1 && !process.env.GEMINI_API_KEY_2) return fallback
+  if (process.env.AI_ENHANCE !== "true" || (!process.env.GEMINI_API_KEY_1 && !process.env.GEMINI_API_KEY_2)) return fallback
   try {
     const result = parseGeminiResponse(await callGemini(`Analyze only the concrete requirements in this job posting. Return only JSON with this exact shape:
 {"roleTitle":"string","roleType":"frontend|ux-engineer|ai-ml|fullstack|backend|devops|mobile|other","roleMargin":0,"mustHaveRequirements":[{"skillId":"use-a-skill-id-from-the-posting","label":"string","aliases":["string"],"tier":"must","quote":"exact sentence from posting","confidence":0.9}],"niceToHaveRequirements":[],"values":[]}
