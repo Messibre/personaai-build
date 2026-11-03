@@ -9,8 +9,8 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 const _playfair = Playfair_Display({ subsets: ["latin"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
-  title: "PersonaAI - Create Your Portfolio in Seconds",
-  description: "Generate a stunning portfolio website from your GitHub profile in seconds using AI",
+  title: "PersonaAI - Tailor your work to every job",
+  description: "Keep your projects in one vault, paste a job posting, and get a portfolio page, resume and short note for that exact role. Nothing is ever invented.",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
