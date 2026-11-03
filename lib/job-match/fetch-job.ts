@@ -11,7 +11,7 @@ function isPrivateHostname(hostname: string): boolean {
     host === "metadata.google.internal"
   ) return true
 
-  if (/^(10|127)\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host)) return true
+  if (host === "0.0.0.0" || host === "255.255.255.255" || /^(10|127)\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host)) return true
   const private172 = host.match(/^172\.(\d+)\./)
   if (private172 && Number(private172[1]) >= 16 && Number(private172[1]) <= 31) return true
   if (host === "::1" || host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) return true

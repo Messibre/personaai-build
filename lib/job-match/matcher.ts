@@ -1,4 +1,4 @@
-import type { EnrichedGitHubRepo } from "@/lib/types"
+import type { EnrichedGitHubRepo } from "../types"
 import type { JobAnalysis, JobProject, ProjectInput, RequirementCheck, SelectedProject } from "./types"
 
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").trim()

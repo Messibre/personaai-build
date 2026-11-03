@@ -1,4 +1,4 @@
-import { callGemini } from "@/lib/gemini"
+import { callGemini } from "../gemini"
 import { parseJobAnalysis } from "./schemas"
 import type { JobAnalysis } from "./types"
 

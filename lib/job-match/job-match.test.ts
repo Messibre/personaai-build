@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { analyzeJob } from "./analyzer"
+import { fetchJobPosting, validateJobUrl } from "./fetch-job"
 import { checkRequirements } from "./matcher"
 import type { JobAnalysis } from "./types"
 
@@ -31,4 +32,12 @@ test("never marks an unsupported required skill as covered", () => {
     resumeText: "Built a React interface.",
   }, analysis)
   assert.equal(result.checks.find((check) => check.requirement.label === "Kubernetes")?.status, "missing")
+})
+
+test("rejects private job URLs and gives a paste fallback when fetching fails", async () => {
+  assert.throws(() => validateJobUrl("http://127.0.0.1/job"), /paste the job description/i)
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => { throw new Error("network unavailable") }
+  await assert.rejects(() => fetchJobPosting("https://jobs.example.com/posting"), /paste the job description/i)
+  globalThis.fetch = originalFetch
 })
