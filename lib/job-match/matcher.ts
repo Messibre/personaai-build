@@ -27,8 +27,8 @@ export function selectProjects(profile: ProfileEvidence, resumeItems: EvidenceIt
     const items = all.filter((item) => item.projectId === project.id)
     const covers = requirements.filter((requirement) => evidenceFor(items, requirement.skillId).length)
     const score = covers.reduce((sum, requirement) => sum + (requirement.tier === "must" ? 20 : 8), 0) + items.reduce((sum, item) => sum + item.strength, 0)
-    const evidence = covers.flatMap((requirement) => evidenceFor(items, requirement.skillId).slice(0, 2).map((item) => item.snippet))
-    return { project: { id: project.id, name: project.name, url: project.url }, score: Math.round(score * 10) / 10, covers: covers.map((requirement) => requirement.label), evidence: [...new Set(evidence)], reason: `Best evidence for ${covers.map((requirement) => requirement.label).join(", ")} in this job.` }
+    const evidence = covers.flatMap((requirement) => evidenceFor(items, requirement.skillId).slice(0, 1).map((item) => `${item.source}: ${item.snippet}`))
+    return { project: { id: project.id, name: project.name, url: project.url, description: project.description, language: project.language, topics: project.topics, stars: project.stars }, score: Math.round(score * 10) / 10, covers: covers.map((requirement) => requirement.label), evidence: [...new Set(evidence)].slice(0, 6), reason: `Best evidence for ${covers.map((requirement) => requirement.label).join(", ")} in this job.` }
   }).filter((item) => item.covers.length).sort((a, b) => b.score - a.score)
   const selected: SelectedProject[] = []
   const covered = new Set<string>()

@@ -17,6 +17,10 @@ export interface ProfileProject {
   url?: string
   pushedAt?: string
   archived?: boolean
+  description?: string
+  language?: string
+  topics?: string[]
+  stars?: number
   evidence: EvidenceItem[]
 }
 
@@ -46,7 +50,7 @@ export interface JobAnalysis {
 }
 
 export interface SelectedProject {
-  project: { id: string; name: string; url?: string }
+  project: { id: string; name: string; url?: string; description?: string; language?: string; topics?: string[]; stars?: number }
   score: number
   covers: string[]
   evidence: string[]
