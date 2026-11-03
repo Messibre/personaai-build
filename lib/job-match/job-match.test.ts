@@ -12,15 +12,15 @@ const profile: ProfileEvidence = {
   items: [{ skill: "react", source: "dependency", strength: 1, projectId: "github:site", projectName: "site", snippet: "package.json dependency: react" }],
 }
 
-test("extracts requirements deterministically from a messy posting", () => {
-  const result = analyzeJob("Senior Frontend Engineer\n\nRequirements:\n- Strong React and TypeScript experience.\n\nNice to have:\n- Kubernetes familiarity.\n\nBenefits and legal text")
+test("extracts requirements from a messy posting", async () => {
+  const result = await analyzeJob("Senior Frontend Engineer\n\nRequirements:\n- Strong React and TypeScript experience.\n\nNice to have:\n- Kubernetes familiarity.\n\nBenefits and legal text")
   assert.equal(result.roleType, "frontend")
   assert.equal(result.mustHaveRequirements.some((item) => item.skillId === "react"), true)
   assert.equal(result.niceToHaveRequirements.some((item) => item.skillId === "kubernetes"), true)
 })
 
-test("never marks an unsupported required skill as covered", () => {
-  const analysis = analyzeJob("Backend Engineer\nRequirements:\n- Kubernetes experience")
+test("never marks an unsupported required skill as covered", async () => {
+  const analysis = await analyzeJob("Backend Engineer\nRequirements:\n- Kubernetes experience")
   const result = checkRequirements(profile, [], analysis)
   assert.equal(result.checks[0]?.status, "missing")
 })

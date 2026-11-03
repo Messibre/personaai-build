@@ -51,10 +51,11 @@ export default function JobMatchPage() {
         console.error("Unexpected Job Match response", response.status)
         throw new Error("Unexpected server response.")
       }
-      const data = await response.json() as { ok: boolean; error?: { message?: string }; analysis?: Result["analysis"]; selectedProjects?: Result["selectedProjects"]; requirementChecks?: Result["requirementChecks"]; summary?: Result["summary"] }
+      const data = await response.json() as { ok?: boolean; error?: { code?: string; message?: string } | string; analysis?: Result["analysis"]; selectedProjects?: Result["selectedProjects"]; requirementChecks?: Result["requirementChecks"]; summary?: Result["summary"] }
       if (!response.ok || !data.ok) {
         console.error("Job Match API error", response.status, data.error)
-        throw new Error(data.error?.message || "Job matching failed.")
+        const message = typeof data.error === "string" ? data.error : data.error?.message
+        throw new Error(message || `Job matching failed (HTTP ${response.status}).`)
       }
       if (!data.analysis || !data.selectedProjects || !data.requirementChecks || !data.summary) throw new Error("Unexpected server response.")
       setResult({ analysis: data.analysis, selectedProjects: data.selectedProjects, requirementChecks: data.requirementChecks, summary: data.summary })

@@ -1,5 +1,7 @@
 import skills from "./skills.json"
+import { callGemini } from "../gemini"
 import type { JobAnalysis, JobRequirement, JobRoleType } from "./types"
+import { z } from "zod"
 
 type Skill = (typeof skills)[number]
 
@@ -44,7 +46,7 @@ function roleType(text: string, title: string): { roleType: JobRoleType; margin:
   return { roleType: ordered[0][1] > 0 ? ordered[0][0] as JobRoleType : "other", margin: ordered[0][1] - ordered[1][1] }
 }
 
-export function analyzeJob(jobText: string): JobAnalysis {
+function deterministicAnalysis(jobText: string): JobAnalysis {
   const text = clean(jobText)
   const lines = sentenceLines(text)
   const title = lines[0]?.slice(0, 160) || "Job opportunity"
@@ -69,4 +71,43 @@ export function analyzeJob(jobText: string): JobAnalysis {
   const role = roleType(text, title)
   const values = ["accessibility", "performance", "design systems", "shipping", "research", "evaluation", "scale"].filter((value) => text.toLowerCase().includes(value))
   return { roleTitle: title, roleType: role.roleType, roleMargin: role.margin, mustHaveRequirements: all.filter((item) => item.tier === "must"), niceToHaveRequirements: all.filter((item) => item.tier === "nice"), values }
+}
+
+const geminiRequirement = z.object({
+  skillId: z.string(),
+  label: z.string(),
+  aliases: z.array(z.string()).max(8),
+  tier: z.enum(["must", "nice"]),
+  quote: z.string(),
+  confidence: z.number().min(0).max(1),
+})
+
+const geminiAnalysis = z.object({
+  roleTitle: z.string(),
+  roleType: z.enum(["frontend", "ux-engineer", "ai-ml", "fullstack", "backend", "devops", "mobile", "other"]),
+  roleMargin: z.number(),
+  mustHaveRequirements: z.array(geminiRequirement),
+  niceToHaveRequirements: z.array(geminiRequirement),
+  values: z.array(z.string()),
+})
+
+function parseGeminiResponse(value: string): JobAnalysis {
+  const json = value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim()
+  return geminiAnalysis.parse(JSON.parse(json))
+}
+
+export async function analyzeJob(jobText: string): Promise<JobAnalysis> {
+  const fallback = deterministicAnalysis(jobText)
+  if (!process.env.GEMINI_API_KEY_1 && !process.env.GEMINI_API_KEY_2) return fallback
+  try {
+    const result = parseGeminiResponse(await callGemini(`Analyze only the concrete requirements in this job posting. Return only JSON with this exact shape:
+{"roleTitle":"string","roleType":"frontend|ux-engineer|ai-ml|fullstack|backend|devops|mobile|other","roleMargin":0,"mustHaveRequirements":[{"skillId":"use-a-skill-id-from-the-posting","label":"string","aliases":["string"],"tier":"must","quote":"exact sentence from posting","confidence":0.9}],"niceToHaveRequirements":[],"values":[]}
+Do not invent skills, evidence, or requirements. Ignore benefits, legal text, and company marketing. Use only exact quotes from the posting.
+
+JOB POSTING:
+${jobText.slice(0, 15000)}`))
+    return result
+  } catch {
+    return fallback
+  }
 }

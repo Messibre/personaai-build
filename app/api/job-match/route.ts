@@ -24,6 +24,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Job matching failed. Please try again."
     const code = message.includes("GitHub") ? "GITHUB_ERROR" : message.includes("paste") || message.includes("blocks") ? "FETCH_BLOCKED" : "JOB_MATCH_FAILED"
+    console.error("[job-match]", code, message)
     return NextResponse.json({ ok: false, error: { code, message } }, { status: 422 })
   }
 }
