@@ -22,10 +22,8 @@ export function buildEducation(resumeText: string | null, accent: string): strin
     }
   }
 
-  const entries = items.length > 0 ? items : [
-    { degree: "B.Sc. Computer Science", school: "Your University", year: "2022" },
-    { degree: "Full-Stack Development Bootcamp", school: "Online / Self-taught", year: "2021" },
-  ]
+  if (items.length === 0) return ""
+  const entries = items
 
   return `
   <section id="education" class="section">

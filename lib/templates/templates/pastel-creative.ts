@@ -66,7 +66,7 @@ export function buildPastelCreative(data: TemplateData): string {
   <main>
   ${config.sections.includes("about") ? buildAbout(profile, aiBio, c.accent, repos) : ""}
   ${config.sections.includes("skills") ? `<section id="skills" class="section"><div class="container"><p class="section-label reveal">Skills</p><h2 class="section-title reveal">My Toolkit</h2><div style="display:flex;flex-wrap:wrap;gap:0">${buildSkills(langs, topics)}</div></div></section>` : ""}
-  ${config.sections.includes("projects") ? `<section id="projects" class="section" style="background:var(--surface)"><div class="container"><p class="section-label reveal">Portfolio</p><h2 class="section-title reveal">Recent Projects</h2><div class="projects-grid">${buildProjects(repos, c.accent, aiProjects)}</div></div></section>` : ""}
+  ${config.sections.includes("projects") ? `<section id="projects" class="section" style="background:var(--surface)"><div class="container"><p class="section-label reveal">Portfolio</p><h2 class="section-title reveal">Projects</h2><div class="projects-grid">${buildProjects(repos, c.accent, aiProjects)}</div></div></section>` : ""}
   ${config.sections.includes("experience") ? buildExperience(data.aiResume, data.resumeText, c.accent) : ""}
   ${config.sections.includes("github-stats") ? buildGitHubStats(profile, c.accent, repos) : ""}
   ${config.sections.includes("testimonials") ? buildTestimonials(c.accent) : ""}

@@ -52,9 +52,9 @@ export function buildBoldPortrait(data: TemplateData): string {
       <h1 class="hero-anim">Hello<span>.</span></h1>
       ${(aiBio || profile.bio) ? `<p class="hero-bio hero-anim">${e(aiBio || profile.bio)}</p>` : ""}
       <div class="stats-row hero-anim">
-        <div><div class="stat-num">+${profile.public_repos}</div><div class="stat-label">Projects</div></div>
-        <div><div class="stat-num">+${profile.followers}</div><div class="stat-label">Followers</div></div>
-        <div><div class="stat-num">${langs.length}</div><div class="stat-label">Languages</div></div>
+        ${profile.public_repos > 0 ? `<div><div class="stat-num">+${profile.public_repos}</div><div class="stat-label">Projects</div></div>` : ""}
+        ${profile.followers > 0 ? `<div><div class="stat-num">+${profile.followers}</div><div class="stat-label">Followers</div></div>` : ""}
+        ${langs.length > 0 ? `<div><div class="stat-num">${langs.length}</div><div class="stat-label">Languages</div></div>` : ""}
       </div>
     </div>
   </section>

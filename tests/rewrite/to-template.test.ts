@@ -9,7 +9,7 @@ import type { PortfolioConfig, TemplateStyle } from "@/lib/types"
 import { ALL_SECTIONS, TEMPLATES, stripScriptsAndStyles, textContent } from "../templates/helpers"
 import { leadFollowingClient, loadAlexVault, loadResumeOnlyVault, uxJob, uxPicks } from "./helpers"
 
-const TEMPLATES_WITH_HARDCODED_FOLLOWERS = new Set<TemplateStyle>(["bold-portrait", "brutalist", "bento-grid"])
+const TEMPLATES_WITH_HARDCODED_FOLLOWERS = new Set<TemplateStyle>()
 
 /** Markup and text only: the templates' own inline JS legitimately contains the keyword `null`. */
 function expectNoLeakedValues(html: string): void {
