@@ -219,7 +219,15 @@ export function TailorFlow() {
 
       {stage === "done" && output && job ? (
         <>
-          <ResultsView vault={vault} job={job} output={output} />
+          <ResultsView
+            vault={vault}
+            job={job}
+            output={output}
+            template={template}
+            colorScheme={colorScheme}
+            company={company.trim() || undefined}
+            onVaultChange={setVault}
+          />
           <FeedbackPrompt key={`${vault.id}:${postingText}`} vault={vault} postingText={postingText} onSaved={setVault} />
           <div>
             <Button type="button" variant="ghost" size="sm" onClick={() => setStage("review")}>

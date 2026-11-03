@@ -1,6 +1,8 @@
+import type { Draft } from "@/lib/schemas/draft"
 import type { JobProfile, ProjectPick } from "@/lib/schemas/job"
 import type { Vault } from "@/lib/schemas/vault"
 import type { ColorScheme, TemplateStyle } from "@/lib/types"
+import type { EditResult, SectionRef } from "./edit"
 import type { AnalyzeOutput, GenerateOutput } from "./pipeline"
 
 export class TailorApiError extends Error {
@@ -50,6 +52,13 @@ export function generateOutputs(
   signal?: AbortSignal,
 ): Promise<GenerateOutput> {
   return post("/api/tailor/generate", input, signal)
+}
+
+export function editSentence(
+  input: { vault: Vault; draft: Draft; ref: SectionRef; newText: string; attachFactIds?: string[] },
+  signal?: AbortSignal,
+): Promise<EditResult> {
+  return post("/api/tailor/edit", input, signal)
 }
 
 export function isAbort(error: unknown): boolean {
