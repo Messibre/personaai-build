@@ -3,6 +3,8 @@ import { getLLMClient } from "@/lib/llm"
 import { DraftError, draftAnswers } from "@/lib/questions/draft"
 import { projectSchema } from "@/lib/schemas/vault"
 
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
+
 export const runtime = "nodejs"
 
 const MAX_BODY_BYTES = 1_000_000
@@ -29,7 +31,7 @@ function describe(error: DraftError): Response {
   }
 }
 
-export async function POST(request: Request): Promise<Response> {
+async function handle(request: Request): Promise<Response> {
   const body = await request.text()
   if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) return errorResponse(413, "Request body too large.", "too_large")
 
@@ -51,3 +53,5 @@ export async function POST(request: Request): Promise<Response> {
     return errorResponse(502, "The AI service is unavailable right now.", "llm_unavailable")
   }
 }
+
+export const POST = withGuards(handle, { route: "questions/draft", max: 20, windowMs: ONE_MINUTE_MS })

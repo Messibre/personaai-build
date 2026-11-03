@@ -1,4 +1,5 @@
 import type { Draft } from "@/lib/schemas/draft"
+import { guardedFetch, type ApiPath } from "@/lib/security/guarded-fetch"
 import type { JobProfile, ProjectPick } from "@/lib/schemas/job"
 import type { Vault } from "@/lib/schemas/vault"
 import type { ColorScheme, TemplateStyle } from "@/lib/types"
@@ -15,10 +16,10 @@ export class TailorApiError extends Error {
   }
 }
 
-async function post<T>(url: string, payload: unknown, signal?: AbortSignal): Promise<T> {
+async function post<T>(url: ApiPath, payload: unknown, signal?: AbortSignal): Promise<T> {
   let response: Response
   try {
-    response = await fetch(url, {
+    response = await guardedFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

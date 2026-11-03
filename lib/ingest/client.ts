@@ -1,3 +1,4 @@
+import { guardedFetch, type ApiPath } from "@/lib/security/guarded-fetch"
 import type { GitHubProfile, GitHubRepo } from "@/lib/types"
 import type { ResumeExtraction } from "@/lib/ingest/resume"
 import { vaultSchema, type Project, type Vault } from "@/lib/schemas/vault"
@@ -23,7 +24,7 @@ async function readError(response: Response, fallback: string): Promise<ImportAp
   } catch {
     // keep the fallback message
   }
-  if (response.status === 429 || /rate limit/i.test(message)) {
+  if (code !== "too_many_requests" && (response.status === 429 || /rate limit/i.test(message))) {
     return new ImportApiError(
       "GitHub is limiting requests right now (unauthenticated access allows only 60 per hour). Wait a while and try again.",
       429,
@@ -33,10 +34,10 @@ async function readError(response: Response, fallback: string): Promise<ImportAp
   return new ImportApiError(message, response.status, code)
 }
 
-async function postJson<T>(url: string, payload: unknown, fallback: string): Promise<T> {
+async function postJson<T>(url: ApiPath, payload: unknown, fallback: string): Promise<T> {
   let response: Response
   try {
-    response = await fetch(url, {
+    response = await guardedFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

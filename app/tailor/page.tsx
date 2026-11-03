@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
+import { AccessCodePrompt } from "@/components/security/access-code-prompt"
 import { TailorFlow } from "@/components/tailor/tailor-flow"
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function TailorPage() {
       <Suspense fallback={null}>
         <TailorFlow />
       </Suspense>
+      <AccessCodePrompt />
     </main>
   )
 }

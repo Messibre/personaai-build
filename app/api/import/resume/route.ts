@@ -2,6 +2,8 @@ import { z } from "zod"
 import { MAX_RESUME_CHARS, extractResume, type ResumeExtractionError } from "@/lib/ingest/resume"
 import { getLLMClient } from "@/lib/llm"
 
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
+
 export const runtime = "nodejs"
 
 const MAX_BODY_BYTES = 1_000_000
@@ -34,7 +36,7 @@ function describe(error: ResumeExtractionError): Response {
   }
 }
 
-export async function POST(request: Request): Promise<Response> {
+async function handle(request: Request): Promise<Response> {
   const body = await request.text()
   if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) return errorResponse(413, "Request body too large.", "too_large")
 
@@ -51,3 +53,5 @@ export async function POST(request: Request): Promise<Response> {
   const result = await extractResume(getLLMClient(), parsed.data.text)
   return result.ok ? Response.json(result.data) : describe(result.error)
 }
+
+export const POST = withGuards(handle, { route: "import/resume", max: 5, windowMs: ONE_MINUTE_MS })

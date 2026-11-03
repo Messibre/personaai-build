@@ -4,6 +4,8 @@ import { repoToProjectDraft } from "@/lib/ingest/github"
 import { MAX_IMPORT_REPOS } from "@/lib/ingest/merge"
 import type { Project } from "@/lib/schemas/vault"
 
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
+
 export const runtime = "nodejs"
 
 const MAX_BODY_BYTES = 1_000_000
@@ -22,7 +24,7 @@ function errorResponse(status: number, error: string, code?: string): Response {
   return Response.json({ error, ...(code ? { code } : {}) }, { status })
 }
 
-export async function POST(request: Request): Promise<Response> {
+async function handle(request: Request): Promise<Response> {
   const body = await request.text()
   if (Buffer.byteLength(body, "utf8") > MAX_BODY_BYTES) return errorResponse(413, "Request body too large.")
 
@@ -67,3 +69,5 @@ export async function POST(request: Request): Promise<Response> {
 
   return Response.json(projects)
 }
+
+export const POST = withGuards(handle, { route: "import/repos", max: 5, windowMs: ONE_MINUTE_MS })

@@ -3,10 +3,12 @@ import { generateStage } from "@/lib/tailor/pipeline"
 import { generateRequestSchema } from "@/lib/tailor/requests"
 import { getTailorDeps } from "@/lib/tailor/wire"
 
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
+
 export const runtime = "nodejs"
 export const maxDuration = 90
 
-export async function POST(request: Request): Promise<Response> {
+async function handle(request: Request): Promise<Response> {
   const body = await readValidatedBody(request, generateRequestSchema)
   if (body instanceof Response) return body
 
@@ -18,3 +20,5 @@ export async function POST(request: Request): Promise<Response> {
   }
   return result.ok ? Response.json(result.data) : stageErrorResponse(result.error)
 }
+
+export const POST = withGuards(handle, { route: "tailor/generate", max: 5, windowMs: ONE_MINUTE_MS })
