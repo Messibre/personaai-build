@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto"
 import { vaultSchema } from "@/lib/schemas/vault"
-import { FileVaultStore } from "@/lib/vault/file-store"
-import { VaultStoreError, isValidVaultId } from "@/lib/vault/store"
+import { NO_PERSISTENT_STORE_MESSAGE, getServerVaultStore } from "@/lib/vault/index"
+import { VaultStoreError, isValidVaultId, type VaultStore } from "@/lib/vault/store"
+
+/*
+ * Security notes: the vault id in the URL is the access secret. Anyone with the link can read and
+ * write that vault, so ids are unguessable (see createVaultId), are never logged and never
+ * appear in error bodies. There is no listing endpoint. DELETE lets users erase their data.
+ */
 
 export const runtime = "nodejs"
 
@@ -23,9 +29,19 @@ function storeFailure(error: unknown): Response {
   return errorResponse(500, message, { traceId })
 }
 
-// Vercel's filesystem is not persistent, so a file-backed API there would silently lose data.
-function unavailableOnVercel(): Response | null {
-  return process.env.VERCEL ? errorResponse(501, "Vault storage is not available on this deployment.") : null
+// Returns a store, or a 501 only when no persistent store is configured on this deployment.
+function resolveStore(): VaultStore | Response {
+  try {
+    return getServerVaultStore()
+  } catch (error) {
+    if (error instanceof VaultStoreError && error.code === "config") {
+      const unconfigured = error.message === NO_PERSISTENT_STORE_MESSAGE
+      if (unconfigured) return errorResponse(501, NO_PERSISTENT_STORE_MESSAGE)
+      console.error("[vault] storage is misconfigured")
+      return errorResponse(500, "Vault storage is misconfigured.")
+    }
+    return storeFailure(error)
+  }
 }
 
 async function resolveId(context: RouteContext): Promise<string | Response> {
@@ -34,13 +50,13 @@ async function resolveId(context: RouteContext): Promise<string | Response> {
 }
 
 export async function GET(_request: Request, context: RouteContext): Promise<Response> {
-  const blocked = unavailableOnVercel()
-  if (blocked) return blocked
+  const store = resolveStore()
+  if (store instanceof Response) return store
   const id = await resolveId(context)
   if (id instanceof Response) return id
 
   try {
-    const vault = await new FileVaultStore().get(id)
+    const vault = await store.get(id)
     return vault ? Response.json(vault) : errorResponse(404, "Vault not found.")
   } catch (error) {
     return storeFailure(error)
@@ -48,8 +64,8 @@ export async function GET(_request: Request, context: RouteContext): Promise<Res
 }
 
 export async function PUT(request: Request, context: RouteContext): Promise<Response> {
-  const blocked = unavailableOnVercel()
-  if (blocked) return blocked
+  const store = resolveStore()
+  if (store instanceof Response) return store
   const id = await resolveId(context)
   if (id instanceof Response) return id
 
@@ -82,7 +98,7 @@ export async function PUT(request: Request, context: RouteContext): Promise<Resp
   }
 
   try {
-    await new FileVaultStore().save(parsed.data)
+    await store.save(parsed.data)
     return Response.json({ id, updatedAt: parsed.data.updatedAt })
   } catch (error) {
     return storeFailure(error)
@@ -90,12 +106,11 @@ export async function PUT(request: Request, context: RouteContext): Promise<Resp
 }
 
 export async function DELETE(_request: Request, context: RouteContext): Promise<Response> {
-  const blocked = unavailableOnVercel()
-  if (blocked) return blocked
+  const store = resolveStore()
+  if (store instanceof Response) return store
   const id = await resolveId(context)
   if (id instanceof Response) return id
 
-  const store = new FileVaultStore()
   try {
     try {
       if ((await store.get(id)) === null) return errorResponse(404, "Vault not found.")

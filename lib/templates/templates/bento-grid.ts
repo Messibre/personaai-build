@@ -95,10 +95,10 @@ export function buildBentoGrid(data: TemplateData): string {
         ${bio ? `<p style="font-size:14px;color:var(--muted);line-height:1.8">${e(bio)}</p>` : ""}
       </div>
       <div class="bento-cell bento-stats hero-anim">
-        <div style="font-size:2.5rem;font-weight:800;color:${c.accent}">${profile.public_repos}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">Public Repos</div>
-        <div style="font-size:2rem;font-weight:800;color:var(--text);margin-top:16px">${profile.followers}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">Followers</div>
+        ${profile.public_repos > 0 ? `<div style="font-size:2.5rem;font-weight:800;color:${c.accent}">${profile.public_repos}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Public Repos</div>` : ""}
+        ${profile.followers > 0 ? `<div style="font-size:2rem;font-weight:800;color:var(--text);margin-top:16px">${profile.followers}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Followers</div>` : ""}
       </div>
       ${config.sections.includes("skills") ? `<div class="bento-cell bento-skills hero-anim"><p class="section-label">Stack</p><div style="margin-top:8px">${[...langs,...topics].slice(0,14).map(s=>`<span class="skill-badge">${e(s)}</span>`).join("")}</div></div>` : ""}
       ${config.sections.includes("projects") ? projects.map(p=>`<div class="bento-cell bento-project reveal"><a href="${safeUrl(p.url)}" target="_blank" rel="noopener" aria-label="View ${e(p.name)}"><p class="proj-name">${e(p.name)}</p></a><p class="proj-desc">${e(stripMd(p.description))}</p><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">${p.language?`<span class="proj-lang">${e(p.language)}</span>`:`<span></span>`}${p.stars>0?`<span style="font-size:11px;color:${c.accent}70" aria-label="${p.stars} stars">&#9733;${p.stars}</span>`:""}</div></div>`).join("") : ""}

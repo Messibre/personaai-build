@@ -30,9 +30,6 @@ export function buildContact(profile: GitHubProfile, accent: string, socialLinks
     icons.push(`<a href="${safeUrl(blogUrl)}" target="_blank" rel="noopener" class="social-link" aria-label="Personal website" title="Website">${SOCIAL_SVGS.blog}</a>`)
   }
 
-  // Email from GitHub API isn't always available, so we fall back to mailto: pattern
-  const emailHint = `${profile.username}@users.noreply.github.com`
-
   return `
   <section id="contact" class="section">
     <div class="container" style="text-align:center">
@@ -43,10 +40,6 @@ export function buildContact(profile: GitHubProfile, accent: string, socialLinks
         ${icons.join("\n        ")}
       </div>
       <div class="reveal" style="display:flex;flex-direction:column;align-items:center;gap:12px">
-        <button class="email-copy" onclick="copyEmail('${e(emailHint)}')" aria-label="Copy email address to clipboard">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy email to clipboard
-        </button>
         <a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" style="padding:14px 36px;background:${accent};color:#000;border-radius:12px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px" aria-label="View GitHub profile">
           ${SOCIAL_SVGS.github} View GitHub Profile
         </a>

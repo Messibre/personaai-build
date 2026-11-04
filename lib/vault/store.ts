@@ -13,7 +13,7 @@ export interface VaultStore {
   delete(id: string): Promise<void>
 }
 
-export type VaultStoreErrorCode = "invalid_id" | "invalid_vault" | "corrupt" | "io"
+export type VaultStoreErrorCode = "invalid_id" | "invalid_vault" | "corrupt" | "io" | "config"
 
 /** Messages are safe to show to a client: they never contain filesystem paths or vault contents. */
 export class VaultStoreError extends Error {

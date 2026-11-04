@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
+import { AccessCodePrompt } from "@/components/security/access-code-prompt"
 import { ImportPanel } from "@/components/vault/import-panel"
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function VaultPage() {
       <Suspense fallback={null}>
         <ImportPanel />
       </Suspense>
+      <AccessCodePrompt />
     </main>
   )
 }

@@ -17,9 +17,6 @@ export function buildProjects(repos: GitHubRepo[], accent: string, aiProjects?: 
     return ""
   }
 
-  // Determine the most recently pushed repo (first non-fork in the list, as GitHub API returns by updated_at)
-  const recentRepo = repos.filter(r => !r.fork)[0]?.name
-
   if (aiProjects && aiProjects.length > 0) {
     const langs = [...new Set(aiProjects.map(p => p.language).filter(Boolean))] as string[]
     const filterChips = langs.length > 1
@@ -28,16 +25,14 @@ export function buildProjects(repos: GitHubRepo[], accent: string, aiProjects?: 
           ${langs.map(l => `<button class="proj-chip" data-lang="${e(l)}">${e(l)}</button>`).join("")}
         </div>`
       : ""
-    return filterChips + aiProjects.slice(0, 7).map((p, i) => {
+    return filterChips + aiProjects.slice(0, 7).map((p) => {
       const lc = langColor(p.language)
-      const isRecent = i === 0
       return `
     <div class="project-card reveal" data-lang="${e(p.language || "")}" style="opacity:0;transform:translateY(40px)">
       <div class="proj-thumb" style="background:linear-gradient(90deg,${lc},${lc}80)" aria-hidden="true"></div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">
         <h3 class="project-name">${e(p.name)}</h3>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-          ${isRecent ? `<span class="proj-now">Active</span>` : ""}
           ${p.stars > 0 ? `<span class="project-stars" aria-label="${p.stars} stars">&#9733; ${p.stars}</span>` : ""}
         </div>
       </div>
@@ -61,17 +56,15 @@ export function buildProjects(repos: GitHubRepo[], accent: string, aiProjects?: 
       </div>`
     : ""
 
-  return filterChips + filtered.map((r, i) => {
+  return filterChips + filtered.map((r) => {
     const desc = buildFallbackDescription(r) || smartRepoDescription(r.name, r.language)
     const lc = langColor(r.language)
-    const isRecent = r.name === recentRepo
     return `
     <div class="project-card reveal" data-lang="${e(r.language || "")}" style="opacity:0;transform:translateY(40px)">
       <div class="proj-thumb" style="background:linear-gradient(90deg,${lc},${lc}80)" aria-hidden="true"></div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">
         <h3 class="project-name">${e(r.name)}</h3>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-          ${isRecent ? `<span class="proj-now">Active</span>` : ""}
           ${r.stargazers_count > 0 ? `<span class="project-stars" aria-label="${r.stargazers_count} stars">&#9733; ${r.stargazers_count}</span>` : ""}
         </div>
       </div>

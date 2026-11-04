@@ -1,11 +1,12 @@
 import { ImportApiError } from "@/lib/ingest/client"
+import { guardedFetch } from "@/lib/security/guarded-fetch"
 import type { AnswerDraft } from "@/lib/questions/questions"
 import type { Project } from "@/lib/schemas/vault"
 
 export async function requestDrafts(project: Project, signal?: AbortSignal): Promise<AnswerDraft[]> {
   let response: Response
   try {
-    response = await fetch("/api/questions/draft", {
+    response = await guardedFetch("/api/questions/draft", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ project }),

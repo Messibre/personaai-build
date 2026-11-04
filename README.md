@@ -1,12 +1,29 @@
 # PersonaAI
 
-**Generate stunning portfolio websites from your GitHub, resume, and Notion in seconds using AI — deploy to Vercel in one click.**
+**Tailor one body of work to every job you apply for.**
 
-PersonaAI is an AI-powered portfolio generator that creates beautiful, responsive, and professional portfolio websites. Simply connect your GitHub profile, upload your resume, and let AI craft a personalized portfolio that showcases your work. When you're ready, deploy it live to Vercel instantly.
+PersonaAI is a job-tailoring tool. You store your real work once as confirmed facts in a **vault**, paste a job posting, and get a portfolio page, a resume and a short note written for that exact role. Nothing you did not do is ever added.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Messibre/personaai-build)
 
-## Features
+## How it works
+
+1. **Put your work in once** (`/vault`) — import GitHub repositories and a resume, answer three short questions per project, and confirm each fact. Every fact keeps the evidence it came from.
+2. **Paste a job posting** (`/tailor`) — the job is analysed, and the projects that fit it best are picked. If the job asks for something your vault cannot support, you are told.
+3. **Get the output** — a portfolio page, resume and short note, written only from facts you confirmed and re-checked against your vault before you see them.
+
+## Principles
+
+- Only confirmed facts ever reach a generation prompt.
+- Nothing is invented: no fake metrics, no guessed technologies.
+- Evidence is verified in code as a verbatim quote from the source, never by trusting the model.
+- Resumes, READMEs and job postings are treated as data, never as instructions.
+
+Contributor rules live in [AGENTS.md](./AGENTS.md).
+
+## Legacy generator
+
+The original generic portfolio builder is still available at `/legacy` (hidden from search engines). It is frozen and is not part of the job-tailoring flow.
 
 ### Data Sources
 - **GitHub Integration** — Automatically fetches your profile, repositories, README content, contribution stats, and detected technologies
@@ -80,13 +97,30 @@ Choose from professionally designed, fully responsive templates:
 Create a `.env.local` file with:
 
 ```env
-# Required for AI content generation
+# Required for AI generation
 GEMINI_API_KEY_1=your_gemini_api_key
 GEMINI_API_KEY_2=your_backup_gemini_api_key  # Optional, for failover
 
-# Required for one-click deploy feature
+# Required for the legacy one-click deploy feature
 VERCEL_TOKEN=your_vercel_token
+
+# Optional (see .env.example)
+LLM_PROVIDER=gemini        # "gemini" or "mock" (offline fixtures, no API calls)
+GEMINI_MODEL=gemini-2.5-flash
+LLM_TIMEOUT_MS=10000
+VAULT_DATA_DIR=data/vaults # local dev only; /api/vault file storage is disabled on Vercel
+GITHUB_TOKEN=              # raises the GitHub import limit from 60 to 5,000 requests/hour
 ```
+
+| Variable | Purpose |
+|----------|---------|
+| `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2` | Gemini keys; the second is used for failover |
+| `LLM_PROVIDER` | `gemini` for real calls, `mock` for deterministic offline responses |
+| `GEMINI_MODEL` | Gemini model name (default `gemini-2.5-flash`) |
+| `LLM_TIMEOUT_MS` | Per-call timeout for model requests |
+| `VAULT_DATA_DIR` | Folder where the local file-backed vault store writes JSON (local dev only) |
+| `GITHUB_TOKEN` | Optional token sent as a Bearer header for repository imports |
+| `VERCEL_TOKEN` | Used only by the legacy one-click deploy |
 
 Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 Get your Vercel token from [Vercel Account Settings](https://vercel.com/account/tokens).
@@ -103,6 +137,9 @@ pnpm install
 
 # Start development server
 pnpm dev
+
+# Lint, typecheck, test and boundary checks (run before every PR)
+pnpm verify
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.

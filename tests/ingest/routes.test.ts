@@ -13,9 +13,14 @@ vi.mock("@/lib/llm", async (importOriginal) => {
 import { POST as postRepos } from "@/app/api/import/repos/route"
 import { POST as postResume } from "@/app/api/import/resume/route"
 
+let nextClient = 0
+
+// Each request comes from its own address so the route rate limiter never interferes with these tests.
 function request(path: string, body: unknown): Request {
+  nextClient += 1
   return new Request(`http://localhost${path}`, {
     method: "POST",
+    headers: { "x-forwarded-for": `198.51.100.${nextClient}` },
     body: typeof body === "string" ? body : JSON.stringify(body),
   })
 }
