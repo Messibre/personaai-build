@@ -51,6 +51,10 @@ const TEMPLATE_LABELS: Record<string, string> = {
   "gradient-aurora": "Gradient Aurora",
 }
 
+function hasAiContent(content: { projects: unknown; aboutMe: unknown; heroTagline: unknown }): boolean {
+  return content.projects !== null || content.aboutMe !== null || content.heroTagline !== null
+}
+
 export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
   const { portfolio, github, resume, notion, config, photo, aiContent, targetRole } = state
   const [copied, setCopied] = useState(false)
@@ -76,16 +80,20 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
   const [lastAITemplate, setLastAITemplate] = useState<string>(config.template)
   const [lastAIColor, setLastAIColor] = useState<string>(config.colorScheme)
 
-  const aiContentReady = aiContent.projects !== null || aiContent.aboutMe !== null || aiContent.heroTagline !== null
+  const aiContentReady = hasAiContent(aiContent)
 
   // Always-current ref so the generate closure never reads stale aiContent.
   const aiContentRef = useRef(aiContent)
   useEffect(() => { aiContentRef.current = aiContent }, [aiContent])
 
+  // Whether the most recent generation had AI content available, so a late arrival can trigger one rebuild.
+  const builtWithAiContentRef = useRef(false)
+
   const templateLabel = TEMPLATE_LABELS[config.template] || config.template
 
   const generate = useCallback(async () => {
     if (!github.profile) return
+    builtWithAiContentRef.current = hasAiContent(aiContentRef.current)
     setIsGenerating(true)
     dispatch({ type: "SET_PORTFOLIO_LOADING", loading: true })
 
@@ -138,7 +146,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
           notionContent: notion.content,
           config,
           photoDataUrl: photo.dataUrl,
-          aiContent: aiContentRef.current.projects ? {
+          aiContent: hasAiContent(aiContentRef.current) ? {
             projects: aiContentRef.current.projects, aboutMe: aiContentRef.current.aboutMe, heroTagline: aiContentRef.current.heroTagline,
           } : null,
           targetRole: targetRole.role,
@@ -186,6 +194,14 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
     hasGeneratedRef.current = true
     generate()
   }, [generate, portfolio.html, portfolio.loading, portfolio.error, isGenerating, aiContent.loading, aiContentReady, aiContentTimedOut])
+
+  // The safety valve can build the portfolio before AI content arrives; rebuild once when it does,
+  // otherwise the page keeps generic repo descriptions and no AI bio.
+  useEffect(() => {
+    if (!aiContentReady || builtWithAiContentRef.current) return
+    if (!portfolio.html || portfolio.loading || isGenerating) return
+    generate()
+  }, [aiContentReady, portfolio.html, portfolio.loading, isGenerating, generate])
 
   const handleHtmlChange = useCallback(
     (newHtml: string) => {

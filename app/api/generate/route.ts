@@ -129,21 +129,16 @@ export async function POST(request: Request) {
       return Response.json({ error: "Portfolio configuration is required." }, { status: 400 })
     }
 
-    // Use AI-generated content if available, otherwise fall back to generating a bio
-    let aiBio: string | null = null
-    let aiProjects: AIProject[] | null = null
-    let heroTagline: string | null = null
-
-    if (data.aiContent?.aboutMe) {
-      aiBio = data.aiContent.aboutMe
-      heroTagline = data.aiContent.heroTagline || null
-      aiProjects = data.aiContent.projects || null
-    } else {
-      // Fall back to bio generation + build project descriptions from real repo metadata
-      const geminiBio = await getAiBio(data.github.profile, data.github.repos || [], data.resumeText, data.notionContent, data.config.additionalPrompt)
-      aiBio = geminiBio || buildFallbackAboutMe(data.github.profile, data.github.repos || [])
-      aiProjects = buildFallbackProjects(data.github.repos || [])
-    }
+    // Each AI field is resolved on its own so a partial aiContent still keeps what it has.
+    const repos = data.github.repos || []
+    const suppliedProjects = data.aiContent?.projects
+    const heroTagline = data.aiContent?.heroTagline || null
+    const aiProjects: AIProject[] =
+      Array.isArray(suppliedProjects) && suppliedProjects.length > 0 ? suppliedProjects : buildFallbackProjects(repos)
+    const aiBio =
+      data.aiContent?.aboutMe ||
+      (await getAiBio(data.github.profile, repos, data.resumeText, data.notionContent, data.config.additionalPrompt)) ||
+      buildFallbackAboutMe(data.github.profile, repos)
 
     const html = buildPortfolioHtml({
       profile: data.github.profile,
