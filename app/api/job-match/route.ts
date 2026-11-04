@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       summary,
       analysisId,
       profile: { login: profile.login, projectCount: profile.projects.length, fetchedAt: profile.fetchedAt },
-      meta: { aiEnhanced: explanation.aiEnhanced, tasksRun: ["deterministic-analysis", "compatibility", "evidence-ledger", explanation.aiEnhanced ? "ai-explanation" : "template-explanation"], cached: false, fallbackUsed: explanation.fallbackUsed || false },
+      meta: { aiEnhanced: explanation.aiEnhanced, tasksRun: ["deterministic-analysis", "compatibility", "evidence-ledger", explanation.aiEnhanced ? "ai-explanation" : "template-explanation"], cached: false, fallbackUsed: explanation.fallbackUsed || false, fallbackReason: explanation.fallbackReason ?? null },
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Job matching failed. Please try again."
