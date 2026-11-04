@@ -191,3 +191,212 @@ export async function enrichReposForAI(username: string, repos: GitHubRepo[]): P
     })
   )
 }
+
+// ---------------------------------------------------------------------------
+// Repo deep dive (vault import). Additive: nothing above this line changed.
+// ---------------------------------------------------------------------------
+
+const GITHUB_NAME_PATTERN = /^[A-Za-z0-9._-]+$/
+const MAX_GITHUB_NAME_LENGTH = 100
+const DEEP_DIVE_TIMEOUT_MS = 5000
+const DEEP_DIVE_CONCURRENCY = 3
+const DEEP_DIVE_README_CHARS = 6000
+const DEEP_DIVE_MAX_COMMITS = 10
+const DEEP_DIVE_COMMIT_LINE_CHARS = 200
+
+export class GitHubRateLimitError extends Error {
+  readonly kind = "rate_limited" as const
+  constructor() {
+    super("GitHub rate limit reached. Try again later, or set GITHUB_TOKEN to raise the limit.")
+    this.name = "GitHubRateLimitError"
+  }
+}
+
+export class GitHubInputError extends Error {
+  readonly kind = "invalid_input" as const
+  constructor(message: string) {
+    super(message)
+    this.name = "GitHubInputError"
+  }
+}
+
+export interface RepoDeepDive {
+  owner: string
+  name: string
+  readme: string
+  /** Language name to its share of the code, in percent. */
+  languages: Record<string, number>
+  commits: string[]
+  topics: string[]
+  homepage: string | null
+  description: string | null
+  stars: number
+  forks: number
+  /** Sub-calls that failed; the matching fields are empty rather than the whole dive failing. */
+  degraded: string[]
+}
+
+export interface RepoDeepDiveOptions {
+  /** Overrides GITHUB_TOKEN. An empty string means "no token". */
+  token?: string
+  timeoutMs?: number
+}
+
+function assertGitHubName(label: string, value: unknown): string {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > MAX_GITHUB_NAME_LENGTH ||
+    !GITHUB_NAME_PATTERN.test(value) ||
+    value === "." ||
+    value === ".."
+  ) {
+    throw new GitHubInputError(`Invalid GitHub ${label}.`)
+  }
+  return value
+}
+
+async function runWithConcurrency<T>(tasks: Array<() => Promise<T>>, limit: number): Promise<T[]> {
+  const results = new Array<T>(tasks.length)
+  let next = 0
+  const worker = async () => {
+    while (next < tasks.length) {
+      const index = next++
+      results[index] = await tasks[index]()
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker))
+  return results
+}
+
+type SubCallResult = { ok: true; response: Response } | { ok: false }
+
+function deepDiveHeaders(accept: string, token: string | undefined): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: accept,
+    "User-Agent": "PersonaAI-Portfolio-Generator",
+  }
+  if (token) headers.Authorization = `Bearer ${token}`
+  return headers
+}
+
+function toSafeHomepage(value: unknown): string | null {
+  if (typeof value !== "string" || value.trim() === "") return null
+  try {
+    const url = new URL(value.trim())
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null
+  } catch {
+    return null
+  }
+}
+
+function toLanguagePercentages(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== "object") return {}
+  const entries = Object.entries(raw as Record<string, unknown>).filter(
+    (entry): entry is [string, number] => typeof entry[1] === "number" && entry[1] > 0,
+  )
+  const total = entries.reduce((sum, [, bytes]) => sum + bytes, 0)
+  if (total === 0) return {}
+  return Object.fromEntries(entries.map(([name, bytes]) => [name, Math.round((bytes / total) * 1000) / 10]))
+}
+
+/**
+ * Fetches README, languages, recent commits and metadata for one repo.
+ * Throws GitHubInputError before any request on a bad name, and GitHubRateLimitError on HTTP 403/429.
+ * Any other sub-call failure only empties its own field (listed in `degraded`).
+ */
+export async function fetchRepoDeepDive(
+  username: string,
+  repo: string,
+  opts: RepoDeepDiveOptions = {},
+): Promise<RepoDeepDive> {
+  const owner = assertGitHubName("username", username)
+  const name = assertGitHubName("repository name", repo)
+  const token = (opts.token ?? process.env.GITHUB_TOKEN ?? "").trim() || undefined
+  const timeoutMs = opts.timeoutMs ?? DEEP_DIVE_TIMEOUT_MS
+  const base = `/repos/${owner}/${name}`
+
+  const call = async (path: string, accept: string): Promise<SubCallResult> => {
+    try {
+      const response = await fetch(`${GITHUB_API}${base}${path}`, {
+        headers: deepDiveHeaders(accept, token),
+        signal: AbortSignal.timeout(timeoutMs),
+      })
+      if (response.status === 403 || response.status === 429) throw new GitHubRateLimitError()
+      return response.ok ? { ok: true, response } : { ok: false }
+    } catch (error) {
+      if (error instanceof GitHubRateLimitError) throw error
+      return { ok: false }
+    }
+  }
+
+  const json = async (path: string): Promise<unknown | undefined> => {
+    const result = await call(path, "application/vnd.github+json")
+    if (!result.ok) return undefined
+    try {
+      return await result.response.json()
+    } catch {
+      return undefined
+    }
+  }
+
+  const [meta, languages, readme, commits] = await runWithConcurrency(
+    [
+      () => json(""),
+      () => json("/languages"),
+      async () => {
+        const result = await call("/readme", "application/vnd.github.raw")
+        if (!result.ok) return undefined
+        try {
+          return await result.response.text()
+        } catch {
+          return undefined
+        }
+      },
+      () => json(`/commits?per_page=${DEEP_DIVE_MAX_COMMITS}`),
+    ],
+    DEEP_DIVE_CONCURRENCY,
+  )
+
+  const degraded: string[] = []
+  if (meta === undefined) degraded.push("metadata")
+  if (languages === undefined) degraded.push("languages")
+  if (readme === undefined) degraded.push("readme")
+  if (commits === undefined) degraded.push("commits")
+
+  const metaObject = meta && typeof meta === "object" ? (meta as Record<string, unknown>) : {}
+  const topics = Array.isArray(metaObject.topics)
+    ? metaObject.topics.filter((topic): topic is string => typeof topic === "string" && topic.trim() !== "")
+    : []
+
+  const commitMessages = Array.isArray(commits)
+    ? commits
+        .map((entry) => {
+          const message = (entry as { commit?: { message?: unknown } } | null)?.commit?.message
+          return typeof message === "string"
+            ? message.split("\n")[0].trim().slice(0, DEEP_DIVE_COMMIT_LINE_CHARS)
+            : ""
+        })
+        .filter(Boolean)
+        .slice(0, DEEP_DIVE_MAX_COMMITS)
+    : []
+
+  const count = (value: unknown) => (typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0)
+
+  return {
+    owner,
+    name,
+    readme: typeof readme === "string" ? readme.trim().slice(0, DEEP_DIVE_README_CHARS) : "",
+    languages: toLanguagePercentages(languages),
+    commits: commitMessages,
+    topics,
+    homepage: toSafeHomepage(metaObject.homepage),
+    description:
+      typeof metaObject.description === "string" && metaObject.description.trim() !== ""
+        ? metaObject.description.trim()
+        : null,
+    stars: count(metaObject.stargazers_count),
+    forks: count(metaObject.forks_count),
+    degraded,
+  }
+}

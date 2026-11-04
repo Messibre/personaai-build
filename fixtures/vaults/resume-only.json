@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "vault_resume-only",
+  "createdAt": "2026-01-20T09:00:00.000Z",
+  "updatedAt": "2026-01-20T09:00:00.000Z",
+  "person": {
+    "name": "Priya Patel",
+    "email": "priya@priyapatel.tech",
+    "links": ["https://priyapatel.tech", "https://linkedin.com/in/priyapatel-ai"]
+  },
+  "projects": [],
+  "experience": [
+    {
+      "id": "exp_neuralmetrics",
+      "company": "NeuralMetrics",
+      "title": "Senior Machine Learning Engineer",
+      "start": "2022-08",
+      "facts": [
+        {
+          "id": "fact_nm-built",
+          "text": "Shipped an enterprise RAG indexing platform processing 500GB+ of technical documentation daily",
+          "kind": "built",
+          "source": "resume",
+          "evidence": "processing 500GB+ of technical documentation daily",
+          "confirmed": true
+        },
+        {
+          "id": "fact_nm-outcome",
+          "text": "Reduced p99 generation latency from 1.8s to 420ms",
+          "kind": "outcome",
+          "source": "resume",
+          "evidence": "Reduced p99 generation latency from 1.8s to 420ms",
+          "confirmed": false
+        }
+      ]
+    },
+    {
+      "id": "exp_cortex",
+      "company": "Cortex Data Systems",
+      "title": "Machine Learning Engineer",
+      "start": "2020-01",
+      "end": "2022-07",
+      "facts": [
+        {
+          "id": "fact_cx-metric",
+          "text": "Scaled embedding indexing to support 150M+ vectors with 99.9% search availability",
+          "kind": "metric",
+          "source": "resume",
+          "evidence": "support 150M+ vectors with 99.9% search availability",
+          "confirmed": true
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu_cmu",
+      "institution": "Carnegie Mellon University",
+      "degree": "M.S. in Machine Learning & Language Technologies",
+      "start": "2017",
+      "end": "2018"
+    },
+    {
+      "id": "edu_uw",
+      "institution": "University of Washington",
+      "degree": "B.S. in Computer Science & Applied Mathematics",
+      "start": "2013",
+      "end": "2017"
+    }
+  ],
+  "skills": [
+    { "name": "Python", "source": "resume", "confirmed": true },
+    { "name": "PyTorch", "source": "resume", "confirmed": true },
+    { "name": "FAISS", "source": "resume", "confirmed": false }
+  ],
+  "applications": []
+}

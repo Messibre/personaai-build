@@ -46,11 +46,9 @@ export function buildDesignerCoder(data: TemplateData): string {
   <section id="home" class="hero hero-split">
     <div class="hero-left">
       <h2 class="hero-anim">designer</h2>
-      <p class="hero-anim">Creative mind with an eye for detail, UX, and visual storytelling.</p>
     </div>
     <div class="hero-right">
       <h2 class="hero-anim">&lt;coder&gt;</h2>
-      <p class="hero-anim">Building robust, clean, and performant applications.</p>
     </div>
     <img src="${img}" alt="${e(name)}" class="hero-center-photo hero-anim hero-photo-parallax" crossorigin="anonymous">
   </section>

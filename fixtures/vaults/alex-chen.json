@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "id": "vault_alex-chen",
+  "createdAt": "2026-01-15T10:00:00.000Z",
+  "updatedAt": "2026-01-15T10:05:00.000Z",
+  "person": {
+    "name": "Alex Chen",
+    "email": "alex@alexchen.dev",
+    "links": [
+      "https://alexchen.dev",
+      "https://github.com/alexchen-ui",
+      "https://linkedin.com/in/alexchen-ui"
+    ]
+  },
+  "github": { "username": "alexchen-ui" },
+  "projects": [
+    {
+      "id": "proj_canvas-flow",
+      "name": "canvas-flow",
+      "url": "https://github.com/alexchen-ui/canvas-flow",
+      "primaryLanguage": "TypeScript",
+      "stats": { "stars": 3840, "forks": 290 },
+      "techs": ["TypeScript", "WebGL", "React"],
+      "facts": [
+        {
+          "id": "fact_cf-built",
+          "text": "GPU-accelerated infinite canvas and diagramming engine built with WebGL and React",
+          "kind": "built",
+          "source": "github",
+          "evidence": "GPU-accelerated infinite canvas and diagramming engine built with WebGL and React",
+          "confirmed": true
+        },
+        {
+          "id": "fact_cf-decided",
+          "text": "Moved from SVG DOM rendering to a dual-layer canvas: an offscreen WebGL scene plus an invisible accessibility tree",
+          "kind": "decided",
+          "source": "notion",
+          "evidence": "shifting from SVG DOM rendering to a dual-layer canvas architecture: an offscreen WebGL scene for high-frequency rasterization and an invisible accessibility tree for assistive tech",
+          "confirmed": true
+        },
+        {
+          "id": "fact_cf-hard",
+          "text": "Rendering 10,000+ DOM nodes as SVG had become a bottleneck",
+          "kind": "hard",
+          "source": "notion",
+          "evidence": "Solved bottleneck with 10,000+ DOM nodes",
+          "confirmed": true
+        },
+        {
+          "id": "fact_cf-outcome",
+          "text": "60fps pan/zoom on 4K displays, even on mid-range laptops",
+          "kind": "outcome",
+          "source": "notion",
+          "evidence": "Benchmarks show 60fps pan/zoom on 4K displays even on mid-range laptops.",
+          "confirmed": false
+        },
+        {
+          "id": "fact_cf-metric",
+          "text": "Handles 10,000+ nodes without the DOM bottleneck",
+          "kind": "metric",
+          "source": "ai-draft",
+          "evidence": "10,000+ DOM nodes",
+          "confirmed": false
+        },
+        {
+          "id": "fact_cf-tech",
+          "text": "Built with WebGL and React",
+          "kind": "tech",
+          "source": "github",
+          "evidence": "built with WebGL and React",
+          "confirmed": true
+        }
+      ],
+      "sourceSnapshot": {
+        "readme": "GPU-accelerated infinite canvas and diagramming engine built with WebGL and React",
+        "fetchedAt": "2026-01-15T10:00:00.000Z"
+      }
+    },
+    {
+      "id": "proj_motion-tokens",
+      "name": "motion-tokens",
+      "url": "https://github.com/alexchen-ui/motion-tokens",
+      "primaryLanguage": "TypeScript",
+      "stats": { "stars": 1250, "forks": 84 },
+      "techs": ["TypeScript", "CSS"],
+      "facts": [
+        {
+          "id": "fact_mt-built",
+          "text": "Multi-platform design token compiler with declarative spring animations and WCAG-compliant motion presets",
+          "kind": "built",
+          "source": "github",
+          "evidence": "Multi-platform design token compiler with declarative spring animations and WCAG-compliant motion presets",
+          "confirmed": true
+        },
+        {
+          "id": "fact_mt-decided",
+          "text": "Standardized animation durations, bezier easings, and physics parameters across web and native apps",
+          "kind": "decided",
+          "source": "notion",
+          "evidence": "Standardized animation durations, bezier easings, and physics parameters across web and native apps.",
+          "confirmed": true
+        },
+        {
+          "id": "fact_mt-outcome",
+          "text": "Adopted by 45+ product teams across web, iOS, and Android",
+          "kind": "outcome",
+          "source": "resume",
+          "evidence": "used by 45+ product teams across web, iOS, and Android",
+          "confirmed": false
+        },
+        {
+          "id": "fact_mt-reduced-motion",
+          "text": "Enforces prefers-reduced-motion: reduce across all animated primitives",
+          "kind": "built",
+          "source": "notion",
+          "evidence": "Enforces user preference detection via `prefers-reduced-motion: reduce` across all animated primitives.",
+          "confirmed": true
+        },
+        {
+          "id": "fact_mt-hard",
+          "text": "Keeping one motion spec consistent across web, iOS and Android",
+          "kind": "hard",
+          "source": "user",
+          "confirmed": true
+        }
+      ]
+    },
+    {
+      "id": "proj_headless-tree-grid",
+      "name": "headless-tree-grid",
+      "url": "https://github.com/alexchen-ui/headless-tree-grid",
+      "primaryLanguage": "TypeScript",
+      "stats": { "stars": 940, "forks": 62 },
+      "techs": ["TypeScript", "React"],
+      "facts": [
+        {
+          "id": "fact_htg-built",
+          "text": "High-performance virtualized tree-grid primitive for hierarchical data tables with 100k+ rows",
+          "kind": "built",
+          "source": "github",
+          "evidence": "High-performance virtualized tree-grid primitive for hierarchical data tables with 100k+ rows",
+          "confirmed": true
+        },
+        {
+          "id": "fact_htg-metric",
+          "text": "Supports 100k+ rows",
+          "kind": "metric",
+          "source": "github",
+          "evidence": "100k+ rows",
+          "confirmed": true
+        },
+        {
+          "id": "fact_htg-tech",
+          "text": "Uses virtualization to keep large hierarchical tables fast",
+          "kind": "tech",
+          "source": "ai-draft",
+          "confirmed": false
+        }
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "id": "exp_designos",
+      "company": "DesignOS",
+      "title": "Staff Frontend Engineer",
+      "start": "2022-01",
+      "facts": [
+        {
+          "id": "fact_dos-role",
+          "text": "Staff Frontend Engineer at DesignOS",
+          "kind": "role",
+          "source": "resume",
+          "evidence": "Staff Frontend Engineer | Jan 2022 – Present",
+          "confirmed": true
+        },
+        {
+          "id": "fact_dos-metric",
+          "text": "Built a canvas editor handling 50k+ vector nodes at 60 FPS",
+          "kind": "metric",
+          "source": "resume",
+          "evidence": "handling 50k+ vector nodes at 60 FPS",
+          "confirmed": true
+        },
+        {
+          "id": "fact_dos-mentor",
+          "text": "Mentored 8 senior engineers",
+          "kind": "role",
+          "source": "resume",
+          "evidence": "Mentored 8 senior engineers",
+          "confirmed": true
+        }
+      ]
+    },
+    {
+      "id": "exp_loomflow",
+      "company": "LoomFlow Technologies",
+      "title": "Senior Frontend Engineer",
+      "start": "2019-03",
+      "end": "2021-12",
+      "facts": [
+        {
+          "id": "fact_lf-outcome",
+          "text": "Reduced Time to Interactive from 4.2s to 1.1s",
+          "kind": "outcome",
+          "source": "resume",
+          "evidence": "reducing Time to Interactive (TTI) from 4.2s to 1.1s",
+          "confirmed": true
+        },
+        {
+          "id": "fact_lf-metric",
+          "text": "Improved Largest Contentful Paint by 65%",
+          "kind": "metric",
+          "source": "ai-draft",
+          "evidence": "improving Largest Contentful Paint (LCP) by 65%",
+          "confirmed": false
+        }
+      ]
+    },
+    {
+      "id": "exp_apex",
+      "company": "Apex Interactive",
+      "title": "Frontend Software Engineer",
+      "start": "2017-06",
+      "end": "2019-02",
+      "facts": [
+        {
+          "id": "fact_apex-tech",
+          "text": "Integrated GraphQL endpoints with Apollo Client",
+          "kind": "tech",
+          "source": "resume",
+          "evidence": "Integrated GraphQL endpoints with Apollo Client",
+          "confirmed": true
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu_berkeley",
+      "institution": "University of California, Berkeley",
+      "degree": "B.S. in Computer Science",
+      "start": "2013",
+      "end": "2017"
+    }
+  ],
+  "skills": [
+    { "name": "TypeScript", "source": "resume", "confirmed": true },
+    { "name": "React", "source": "resume", "confirmed": true },
+    { "name": "WebGL", "source": "resume", "confirmed": true },
+    { "name": "Next.js", "source": "resume", "confirmed": true },
+    { "name": "Three.js", "source": "resume", "confirmed": false },
+    { "name": "Storybook", "source": "resume", "confirmed": false }
+  ],
+  "applications": []
+}

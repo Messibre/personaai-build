@@ -11,8 +11,8 @@ export function buildGitHubStats(profile: GitHubProfile, accent: string, repos: 
   const langsUrl = `https://github-readme-stats.vercel.app/api/top-langs/?username=${encodeURIComponent(username)}&layout=compact&theme=transparent&title_color=${accentEnc}&text_color=aaaaaa&border_color=ffffff15&bg_color=00000000&langs_count=8`
   const streakUrl = `https://github-readme-streak-stats.herokuapp.com/?user=${encodeURIComponent(username)}&theme=transparent&ring=${accentEnc}&fire=${accentEnc}&currStreakLabel=${accentEnc}&sideLabels=aaaaaa&dates=666666&border=ffffff15`
 
-  const statCard = (value: string | number, label: string) =>
-    `<div style="text-align:center;padding:20px 28px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;min-width:110px">
+  const statCard = (value: number, label: string) =>
+    !(value > 0) ? "" : `<div style="text-align:center;padding:20px 28px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;min-width:110px">
       <div style="font-size:2rem;font-weight:800;color:${accent};line-height:1">${value}</div>
       <div style="font-size:11px;color:#555;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px">${label}</div>
     </div>`
