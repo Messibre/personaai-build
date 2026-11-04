@@ -6,12 +6,11 @@ import type {
   AIGeneratedContentWithResume,
 } from "@/lib/types";
 import { enrichReposForAI } from "@/lib/github";
+import { getLLMClient } from "@/lib/llm";
 import * as cheerio from "cheerio";
 
-const GEMINI_KEYS = [
-  process.env.GEMINI_API_KEY_1,
-  process.env.GEMINI_API_KEY_2,
-].filter(Boolean) as string[];
+// One slow Gemini call plus a single non-JSON retry must fit inside the function limit.
+export const maxDuration = 90;
 
 interface AIContentRequest {
   targetRole: string;
@@ -48,7 +47,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 // Allowed domains for scraping (security: avoid SSRF)
-const ALLOWED_DOMAINS = [
+export const ALLOWED_DOMAINS = [
   "linkedin.com",
   "github.com",
   "medium.com",
@@ -59,19 +58,16 @@ const ALLOWED_DOMAINS = [
   "notion.site",
   "twitter.com",
   "x.com",
-  "blog.",
-  "portfolio.",
   "vercel.app",
 ];
 
-function isAllowedUrl(url: string): boolean {
+export function isAllowedUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-      return false;
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
     return ALLOWED_DOMAINS.some(
-      (domain) =>
-        parsed.hostname.includes(domain) || parsed.hostname.endsWith(domain),
+      (domain) => host === domain || host.endsWith("." + domain),
     );
   } catch {
     return false;
@@ -138,70 +134,63 @@ async function scrapeUrl(url: string): Promise<string> {
   return scrapeUrlOnce(url);
 }
 
-// Call Gemini API with retry across multiple keys
+// Call Gemini API through unified LLMClient
 async function callGemini(
   prompt: string,
   systemPrompt: string,
   expectJson = false,
-): Promise<{ text: string | null; attempts: GeminiAttemptDebug[] }> {
-  if (GEMINI_KEYS.length === 0) return { text: null, attempts: [] };
+): Promise<{ text: string | null; attempts: GeminiAttemptDebug[]; isConfigured: boolean }> {
+  const client = getLLMClient();
+  const startedAt = Date.now();
+  const result = await client.generate({
+    system: systemPrompt,
+    prompt,
+    maxOutputTokens: 4096,
+    responseMimeType: expectJson ? "application/json" : undefined,
+  });
+  const durationMs = Date.now() - startedAt;
 
-  const attempts: GeminiAttemptDebug[] = [];
+  if (result.ok) {
+    const text = result.text.trim();
+    return {
+      text: text.length > 10 ? text : null,
+      attempts: [
+        {
+          keyIndex: 0,
+          status: 200,
+          durationMs,
+          ok: text.length > 10,
+          textLength: text.length,
+        },
+      ],
+      isConfigured: true,
+    };
+  }
 
-  for (const [index, key] of GEMINI_KEYS.entries()) {
-    const startedAt = Date.now();
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2000,
-            ...(expectJson && { responseMimeType: "application/json" }),
-          },
-        }),
-        signal: AbortSignal.timeout(10000),
-      });
+  const isConfigError = result.error.kind === "config";
+  const status =
+    result.error.kind === "rate_limited"
+      ? 429
+      : result.error.kind === "bad_request"
+        ? 400
+        : isConfigError
+          ? 401
+          : 503;
 
-      if (!res.ok) {
-        const errorText = await res.text().catch(() => "");
-        attempts.push({
-          keyIndex: index,
-          status: res.status,
-          durationMs: Date.now() - startedAt,
-          ok: false,
-          textLength: 0,
-          error: errorText.slice(0, 300),
-        });
-        continue;
-      }
-
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      attempts.push({
-        keyIndex: index,
-        status: res.status,
-        durationMs: Date.now() - startedAt,
-        ok: Boolean(text && text.length > 10),
-        textLength: text?.length || 0,
-      });
-      if (text && text.length > 10) return { text, attempts };
-    } catch (err) {
-      attempts.push({
-        keyIndex: index,
-        durationMs: Date.now() - startedAt,
+  return {
+    text: null,
+    attempts: [
+      {
+        keyIndex: 0,
+        status,
+        durationMs,
         ok: false,
         textLength: 0,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      continue;
-    }
-  }
-  return { text: null, attempts };
+        error: "message" in result.error ? result.error.message : result.error.kind,
+      },
+    ],
+    isConfigured: !isConfigError,
+  };
 }
 
 function extractJsonObject(text: string): string | null {
@@ -245,10 +234,28 @@ function extractJsonObject(text: string): string | null {
   return null;
 }
 
+const MAX_BODY_BYTES = 1_048_576; // ~1 MB
+
 export async function POST(request: Request) {
   try {
     const requestStartedAt = Date.now();
-    const data: AIContentRequest = await request.json();
+
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+      return Response.json({ error: "Payload too large" }, { status: 413 });
+    }
+
+    const rawBody = await request.text();
+    if (rawBody.length > MAX_BODY_BYTES) {
+      return Response.json({ error: "Payload too large" }, { status: 413 });
+    }
+
+    let data: AIContentRequest;
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      return Response.json({ error: "Invalid JSON" }, { status: 400 });
+    }
     const {
       targetRole,
       externalLinks = [],
@@ -429,7 +436,7 @@ Return JSON in exactly this format:
 
     if (
       !aiResponse &&
-      GEMINI_KEYS.length > 0 &&
+      geminiResult.isConfigured &&
       isGeminiRetryWorthwhile(geminiResult.attempts)
     ) {
       const fallbackResult = await callGemini(userPrompt, systemPrompt, false);
@@ -454,7 +461,7 @@ Return JSON in exactly this format:
         return Response.json({
           ...baseFallback,
           debug: {
-            geminiConfigured: GEMINI_KEYS.length > 0,
+            geminiConfigured: geminiResult.isConfigured,
             reason: geminiQuotaOrTimeout
               ? "gemini_rate_limited_or_timed_out"
               : "aiResponse_missing_or_empty",
@@ -534,7 +541,7 @@ Return JSON in exactly this format:
         return Response.json({
           ...final,
           debug: {
-            geminiConfigured: GEMINI_KEYS.length > 0,
+            geminiConfigured: geminiResult.isConfigured,
             reason: "aiResponse_parsed",
             timings: {
               totalMs: Date.now() - requestStartedAt,
@@ -575,7 +582,7 @@ Return JSON in exactly this format:
           ...base2,
           resume: synth || undefined,
           debug: {
-            geminiConfigured: GEMINI_KEYS.length > 0,
+            geminiConfigured: geminiResult.isConfigured,
             reason: geminiQuotaOrTimeout
               ? "gemini_rate_limited_or_timed_out"
               : "aiResponse_parse_error",
@@ -601,9 +608,12 @@ Return JSON in exactly this format:
       return Response.json({ ...base2, resume: synth2 || undefined });
     }
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to generate AI content";
-    return Response.json({ error: message }, { status: 500 });
+    const traceId = crypto.randomUUID();
+    console.error(`[ai-content] error [${traceId}]:`, err);
+    return Response.json(
+      { error: "Something went wrong", traceId },
+      { status: 500 }
+    );
   }
 }
 
@@ -664,33 +674,18 @@ function buildFallbackAboutMe(profile: GitHubProfile | null, repos: GitHubRepo[]
     return `${profile.bio.endsWith(".") ? profile.bio : `${profile.bio}.`}${langs.length ? ` I primarily work in ${langs.join(", ")}.` : ""}${topRepo && topRepo.stargazers_count > 1 ? ` My most-starred project is ${topRepo.name} with ${topRepo.stargazers_count} stars.` : ""}`
   }
 
-  const bios = [
-    `I'm ${name}, a software developer with ${repoCount} public projects on GitHub.${langs.length ? ` Most of my work is in ${langs.join(", ")}.` : ""}${topRepo ? ` My most recognised project is ${topRepo.name}.` : ""} I care about writing code that is clear, well-tested, and easy to maintain.`,
-    `Software developer focused on ${langs[0] || "building"} ${langs[1] ? `and ${langs[1]} ` : ""}projects, currently targeting ${targetRole} roles.${topRepo && topRepo.stargazers_count > 1 ? ` ${topRepo.name} is one of my most-starred open-source contributions.` : ""} I enjoy turning well-defined problems into reliable, readable code.`,
-    `I build software${langs.length ? ` in ${langs.join(", ")}` : ""}${repoCount ? ` and share most of it publicly across ${repoCount} GitHub repositories` : ""}. My work spans${topRepo ? ` projects like ${topRepo.name}` : " utilities and experiments"} to tooling that solves real workflow problems. I value clean interfaces and clear documentation.`,
-    `${name} here — developer, open-source contributor, and habitual over-committer.${langs.length ? ` I spend most of my time in ${langs.slice(0, 2).join(" and ")}.` : ""} I believe the best code is the code you never have to explain twice.`,
-    `I'm a developer who enjoys working across the stack${langs.length ? `, primarily with ${langs.join(", ")}` : ""}.${repoCount ? ` I have ${repoCount} projects on GitHub` : ""} and I am always looking for interesting problems to solve with well-crafted, maintainable software.`,
+  const facts = [
+    `I'm ${name}, a developer targeting ${targetRole} roles${repoCount ? ` with ${repoCount} public repositories on GitHub` : ""}.`,
+    langs.length ? `Most of my work is in ${langs.join(", ")}.` : "",
+    topRepo ? `My most-starred project is ${topRepo.name}${topRepo.stargazers_count > 0 ? ` (${topRepo.stargazers_count} stars)` : ""}.` : "",
   ]
-
-  const index = (profile.username?.charCodeAt(0) ?? 0) % bios.length
-  return bios[index]
+  return facts.filter(Boolean).join(" ")
 }
 
 /** Build a real-feeling hero tagline. */
 function buildFallbackTagline(profile: GitHubProfile | null, repos: GitHubRepo[], targetRole: string): string {
   const langs = [...new Set(repos.filter((r) => !r.fork && r.language).map((r) => r.language as string))].slice(0, 2)
-  const name = profile?.name || profile?.username
-
-  const taglines = [
-    `${targetRole}${langs.length ? ` — ${langs[0]}` : ""}`,
-    `Building reliable software${langs.length ? ` with ${langs.join(" and ")}` : ""}`,
-    `${targetRole} who writes code that lasts`,
-    `Open-source developer${langs.length ? `, specialising in ${langs[0]}` : ""}`,
-    `${name ? `${name} — ` : ""}${targetRole} & open-source contributor`,
-  ]
-
-  const index = (profile?.username?.charCodeAt(1) ?? 0) % taglines.length
-  return taglines[index]
+  return `${targetRole}${langs.length ? ` · ${langs.join(" & ")}` : ""}`
 }
 
 // Lightweight resume summarizer (used when AI doesn't return a resume section)

@@ -1,0 +1,50 @@
+{
+  "profile": {
+    "username": "priyapatel-ai",
+    "name": "Priya Patel",
+    "bio": "Machine Learning Engineer. Focused on retrieval systems, vector indexing, and efficient LLM inference.",
+    "avatar_url": "https://avatars.githubusercontent.com/u/20495834?v=4",
+    "followers": 2180,
+    "following": 95,
+    "public_repos": 31,
+    "html_url": "https://github.com/priyapatel-ai",
+    "location": "Seattle, WA",
+    "blog": "https://priyapatel.tech",
+    "company": "NeuralMetrics"
+  },
+  "repos": [
+    {
+      "name": "fast-rag-pipeline",
+      "description": "Production-grade RAG framework with hybrid BM25 + dense embedding reranking and sub-50ms latency",
+      "language": "Python",
+      "stargazers_count": 4120,
+      "forks_count": 480,
+      "html_url": "https://github.com/priyapatel-ai/fast-rag-pipeline",
+      "fork": false,
+      "topics": ["rag", "llm", "embeddings", "bm25", "vector-search", "python"],
+      "homepage": "https://fast-rag.priyapatel.tech"
+    },
+    {
+      "name": "quant-serving",
+      "description": "Lightweight CUDA kernels and quantization wrappers for serving Gemma and Llama models on consumer GPUs",
+      "language": "C++",
+      "stargazers_count": 1890,
+      "forks_count": 175,
+      "html_url": "https://github.com/priyapatel-ai/quant-serving",
+      "fork": false,
+      "topics": ["cuda", "quantization", "inference", "pytorch", "cpp"],
+      "homepage": null
+    },
+    {
+      "name": "eval-guard",
+      "description": "Deterministic hallucination detection and grounding evaluation suite for LLM output verification",
+      "language": "Python",
+      "stargazers_count": 870,
+      "forks_count": 55,
+      "html_url": "https://github.com/priyapatel-ai/eval-guard",
+      "fork": false,
+      "topics": ["evals", "hallucination", "grounding", "metrics", "rag"],
+      "homepage": "https://evalguard.dev"
+    }
+  ]
+}

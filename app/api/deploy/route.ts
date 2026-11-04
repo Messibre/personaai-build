@@ -2,6 +2,12 @@ import { createHash } from "crypto"
 
 const VERCEL_API = "https://api.vercel.com"
 
+const teamId = process.env.VERCEL_TEAM_ID
+const teamQuery = teamId ? `?teamId=${encodeURIComponent(teamId)}` : ""
+
+const AUTH_ERROR =
+  "Vercel rejected VERCEL_TOKEN for this scope. Create a new token at vercel.com/account/tokens with access to your team (re-authenticate SAML if required) and update VERCEL_TOKEN (and optionally VERCEL_TEAM_ID)."
+
 interface DeployRequest {
   html: string
   projectName?: string
@@ -21,7 +27,7 @@ async function waitForReady(deploymentId: string, token: string, maxWaitMs = 900
     await new Promise(r => setTimeout(r, interval))
 
     try {
-      const res = await fetch(`${VERCEL_API}/v13/deployments/${deploymentId}`, {
+      const res = await fetch(`${VERCEL_API}/v13/deployments/${deploymentId}${teamQuery}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
@@ -47,6 +53,8 @@ async function waitForReady(deploymentId: string, token: string, maxWaitMs = 900
   return null
 }
 
+const MAX_HTML_BYTES = 2 * 1024 * 1024
+
 export async function POST(request: Request) {
   try {
     const token = process.env.VERCEL_TOKEN
@@ -59,8 +67,12 @@ export async function POST(request: Request) {
 
     const { html, projectName = "portfolio" }: DeployRequest = await request.json()
 
-    if (!html || html.length < 100) {
+    if (typeof html !== "string" || html.length < 100) {
       return Response.json({ error: "Invalid HTML content" }, { status: 400 })
+    }
+
+    if (Buffer.byteLength(html, "utf-8") > MAX_HTML_BYTES) {
+      return Response.json({ error: "Portfolio HTML is too large to deploy" }, { status: 413 })
     }
 
     // Clean slug: only lowercase letters and hyphens, max 52 chars
@@ -87,7 +99,7 @@ export async function POST(request: Request) {
       const sha = createHash("sha1").update(content).digest("hex")
       const size = content.length
 
-      const uploadRes = await fetch(`${VERCEL_API}/v2/files`, {
+      const uploadRes = await fetch(`${VERCEL_API}/v2/files${teamQuery}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -97,6 +109,10 @@ export async function POST(request: Request) {
         },
         body: content,
       })
+
+      if (uploadRes.status === 401 || uploadRes.status === 403) {
+        return Response.json({ error: AUTH_ERROR }, { status: 502 })
+      }
 
       if (!uploadRes.ok && uploadRes.status !== 409) {
         const errText = await uploadRes.text()
@@ -110,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     // Create deployment
-    const deployRes = await fetch(`${VERCEL_API}/v13/deployments`, {
+    const deployRes = await fetch(`${VERCEL_API}/v13/deployments${teamQuery}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -124,6 +140,10 @@ export async function POST(request: Request) {
         public: true,
       }),
     })
+
+    if (deployRes.status === 401 || deployRes.status === 403) {
+      return Response.json({ error: AUTH_ERROR }, { status: 502 })
+    }
 
     if (!deployRes.ok) {
       const errData = await deployRes.json().catch(() => ({}))

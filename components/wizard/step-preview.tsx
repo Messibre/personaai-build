@@ -99,7 +99,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
             targetRole: targetRole.role || "Software Developer",
             name: github.profile.name || github.profile.username,
             aboutMe: aiContentRef.current.aboutMe || github.profile.bio || `${github.profile.name || github.profile.username} is a software developer.`,
-            heroTagline: aiContentRef.current.heroTagline || targetRole.role || "Building amazing software",
+            heroTagline: aiContentRef.current.heroTagline || targetRole.role || "Software Developer",
             projects: aiContentRef.current.projects || github.repos.slice(0, 7).map((r) => ({
               name: r.name, url: r.html_url, language: r.language,
               description: r.description || `A ${r.language || "software"} project.`,

@@ -1,10 +1,6 @@
 import type { GitHubProfile, GitHubRepo, PortfolioConfig, AIProject, AIGeneratedContent } from "@/lib/types"
 import { buildPortfolioHtml } from "@/lib/templates"
-
-const GEMINI_KEYS = [
-  process.env.GEMINI_API_KEY_1,
-  process.env.GEMINI_API_KEY_2,
-].filter(Boolean) as string[]
+import { getLLMClient } from "@/lib/llm"
 
 interface GenerateRequest {
   github: {
@@ -20,8 +16,6 @@ interface GenerateRequest {
 }
 
 async function getAiBio(profile: GitHubProfile, repos: GitHubRepo[], resumeText: string | null, notionContent: string | null, additionalPrompt?: string): Promise<string | null> {
-  if (GEMINI_KEYS.length === 0) return null
-
   const langs = [...new Set(repos.map((r) => r.language).filter(Boolean))].slice(0, 6)
   const prompt = `Write a compelling 2-3 sentence professional bio for a developer portfolio. Be concise, confident, and write in first person.
 
@@ -36,27 +30,17 @@ ${additionalPrompt ? `User instructions: ${additionalPrompt}` : ""}
 
 Output ONLY the bio text, no quotes, no labels.`
 
-  for (const key of GEMINI_KEYS) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
-        }),
-        signal: AbortSignal.timeout(8000),
-      })
+  const client = getLLMClient()
+  const result = await client.generate({
+    prompt,
+    maxOutputTokens: 500,
+  })
 
-      if (!res.ok) continue
-      const data = await res.json()
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-      if (text && text.length > 20) return text
-    } catch {
-      continue
-    }
+  if (result.ok) {
+    const text = result.text.trim()
+    if (text.length > 20) return text
   }
+
   return null
 }
 

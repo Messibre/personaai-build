@@ -1,0 +1,34 @@
+MARCUS VANCE
+Austin, TX • marcus@marcusvance.io • https://marcusvance.io • https://github.com/marcusvance-dev • https://linkedin.com/in/marcusvance-dev
+
+SUMMARY
+Staff Infrastructure & Backend Engineer with 8+ years architecting distributed systems, cloud-native platforms, and high-throughput data backbones. Deep expertise in Go, Kubernetes, eBPF, PostgreSQL, and zero-downtime multi-region migrations. Proven leader managing multi-cluster infrastructure powering 99.995% SLA enterprise applications.
+
+WORK EXPERIENCE
+
+KubeCloud Labs — Austin, TX
+Staff Infrastructure Engineer | Mar 2022 – Present
+• Designed and developed an open-source Kubernetes service mesh operator with eBPF network observability, managing 1,200+ microservice pods.
+• Re-architected multi-region database failover using Postgres logical replication and Raft-based cluster coordination, lowering RPO to < 100ms and RTO to < 3s.
+• Championed FinOps and container density initiatives that reduced AWS computing expenses by $1.4M annually.
+
+Veloce Cloud Systems — Austin, TX
+Senior Backend & Platform Engineer | Jun 2019 – Feb 2022
+• Built real-time Change Data Capture (CDC) pipelines handling 45,000 events/sec from Postgres to Kafka and ClickHouse.
+• Automated global infrastructure deployments across AWS (us-east-1, eu-west-1, ap-southeast-1) using Terraform, ArgoCD, and GitHub Actions.
+• Implemented automated canary deployment rollouts with Prometheus alerting and automated rollback capabilities.
+
+DataPeak Solutions — Dallas, TX
+Backend Software Engineer | Aug 2016 – May 2019
+• Developed high-concurrency microservices in Go and Python backed by Redis and PostgreSQL.
+• Optimized query execution plans and database indexes on 4TB+ transactional datasets, resolving severe connection pooling locks.
+
+EDUCATION
+University of Texas at Austin
+B.S. in Electrical & Computer Engineering | 2012 – 2016
+
+SKILLS
+• Languages: Go, Rust, Python, SQL, TypeScript, Bash
+• Cloud & Orchestration: Kubernetes, Docker, AWS (EKS, RDS, S3, IAM, VPC), Terraform, Helm, ArgoCD
+• Databases & Messaging: PostgreSQL, Kafka, Redis, ClickHouse, RabbitMQ
+• Observability & Networking: eBPF, Prometheus, Grafana, OpenTelemetry, Envoy, WireGuard

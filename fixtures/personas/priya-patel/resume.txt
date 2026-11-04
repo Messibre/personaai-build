@@ -1,0 +1,37 @@
+PRIYA PATEL
+Seattle, WA • priya@priyapatel.tech • https://priyapatel.tech • https://github.com/priyapatel-ai • https://linkedin.com/in/priyapatel-ai
+
+SUMMARY
+Machine Learning Engineer with 6+ years of expertise in natural language processing, vector retrieval systems, and high-throughput model inference. Built and scaled RAG pipelines answering over 25M daily queries with verifiable citation grounding. Specialized in PyTorch, CUDA kernel optimization, hybrid lexical-dense search, and automated evaluation frameworks.
+
+WORK EXPERIENCE
+
+NeuralMetrics — Seattle, WA
+Senior Machine Learning Engineer | Aug 2022 – Present
+• Designed and shipped an enterprise RAG indexing platform processing 500GB+ of technical documentation daily with hybrid BM25 and ColBERT reranking.
+• Reduced p99 generation latency from 1.8s to 420ms by implementing KV-cache compression and INT4 quantization kernels.
+• Created EvalGuard, an internal framework measuring answer faithfulness and chunk grounding; raised grounding precision from 78% to 94.6%.
+
+Cortex Data Systems — Seattle, WA
+Machine Learning Engineer | Jan 2020 – Jul 2022
+• Developed transformer-based intent classification and semantic routing models deployed across 12 microservices.
+• Scaled embedding indexing on Milvus and FAISS clusters to support 150M+ vectors with 99.9% search availability.
+• Built distributed data ingestion pipelines using Apache Spark, Kafka, and Python.
+
+DataMind Labs — Boston, MA
+Data Scientist / NLP Researcher | Jun 2018 – Dec 2019
+• Researched few-shot entity extraction for biomedical literature, co-authoring a paper accepted at EMNLP 2019.
+• Fine-tuned BERT and RoBERTa models for multi-label text categorization.
+
+EDUCATION
+Carnegie Mellon University
+M.S. in Machine Learning & Language Technologies | 2017 – 2018
+
+University of Washington
+B.S. in Computer Science & Applied Mathematics | 2013 – 2017
+
+SKILLS
+• Languages: Python, C++, SQL, Bash, Go
+• Frameworks: PyTorch, vLLM, Hugging Face, Ray, LangChain, LlamaIndex, ONNX Runtime
+• Data & Retrieval: FAISS, Qdrant, Milvus, Elasticsearch, BigQuery, PostgreSQL (pgvector), Kafka
+• Tools: Docker, Kubernetes, Weights & Biases, Triton Inference Server, Git, Linux

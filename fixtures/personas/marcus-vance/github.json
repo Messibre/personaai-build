@@ -1,0 +1,50 @@
+{
+  "profile": {
+    "username": "marcusvance-dev",
+    "name": "Marcus Vance",
+    "bio": "Staff Infrastructure & Distributed Systems Engineer. Building resilient backend services, Kubernetes operators, and cloud platforms.",
+    "avatar_url": "https://avatars.githubusercontent.com/u/38291045?v=4",
+    "followers": 1750,
+    "following": 130,
+    "public_repos": 48,
+    "html_url": "https://github.com/marcusvance-dev",
+    "location": "Austin, TX",
+    "blog": "https://marcusvance.io",
+    "company": "KubeCloud Labs"
+  },
+  "repos": [
+    {
+      "name": "k8s-mesh-operator",
+      "description": "Zero-trust service mesh operator for Kubernetes clusters with automated mTLS certificate rotation and eBPF tracing",
+      "language": "Go",
+      "stargazers_count": 3210,
+      "forks_count": 310,
+      "html_url": "https://github.com/marcusvance-dev/k8s-mesh-operator",
+      "fork": false,
+      "topics": ["kubernetes", "go", "ebpf", "security", "mtls", "devops"],
+      "homepage": "https://meshop.kubecloud.io"
+    },
+    {
+      "name": "dist-cache-go",
+      "description": "Distributed consistent-hashing in-memory key-value cache with Raft consensus and write-ahead logging",
+      "language": "Go",
+      "stargazers_count": 1640,
+      "forks_count": 142,
+      "html_url": "https://github.com/marcusvance-dev/dist-cache-go",
+      "fork": false,
+      "topics": ["distributed-systems", "raft", "cache", "go", "concurrency"],
+      "homepage": null
+    },
+    {
+      "name": "pg-stream-cdc",
+      "description": "Lightweight Postgres logical decoding client streaming WAL changes directly into Apache Kafka or RabbitMQ",
+      "language": "Rust",
+      "stargazers_count": 1120,
+      "forks_count": 89,
+      "html_url": "https://github.com/marcusvance-dev/pg-stream-cdc",
+      "fork": false,
+      "topics": ["postgres", "cdc", "rust", "kafka", "streaming"],
+      "homepage": null
+    }
+  ]
+}

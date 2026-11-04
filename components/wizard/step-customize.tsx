@@ -18,6 +18,7 @@ import {
   MessageSquare,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { TemplateThumbnail } from "./template-thumbnail"
 
 interface StepCustomizeProps {
   state: WizardState
@@ -597,12 +598,23 @@ export function StepCustomize({ state, dispatch, onNext, onBack }: StepCustomize
                     : "border-[var(--persona-border)] hover:border-[var(--persona-accent)]/30 hover:shadow-sm"
                 )}
               >
-                {/* SVG Preview */}
+                {/* Live preview of the real template; SVG sketch only until a profile exists */}
                 <div className={cn(
-                  "w-full h-16 flex items-center justify-center overflow-hidden transition-all duration-300",
-                  isSelected ? "opacity-100" : "opacity-70 group-hover:opacity-90"
+                  "w-full h-20 flex items-center justify-center overflow-hidden transition-all duration-300",
+                  isSelected ? "opacity-100" : "opacity-80 group-hover:opacity-100"
                 )}>
-                  <TemplatePreview templateId={template.id} isSelected={isSelected} />
+                  {state.github.profile ? (
+                    <TemplateThumbnail
+                      templateId={template.id}
+                      label={template.label}
+                      profile={state.github.profile}
+                      repos={state.github.repos}
+                      photoUrl={photo.dataUrl}
+                      config={config}
+                    />
+                  ) : (
+                    <TemplatePreview templateId={template.id} isSelected={isSelected} />
+                  )}
                 </div>
                 <div className="flex flex-col gap-0.5 px-2 py-1.5 w-full bg-[var(--persona-surface)] border-t border-[var(--persona-border)]">
                   <div className="flex items-center gap-1">
