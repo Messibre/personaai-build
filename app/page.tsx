@@ -166,6 +166,7 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
             <Link href="#how-it-works" className="hover:text-foreground transition-colors">How it works</Link>
             <Link href="#templates" className="hover:text-foreground transition-colors">Templates</Link>
+            <Link href="/job-match" className="hover:text-foreground transition-colors">Job Match</Link>
           </div>
 
           {/* Right side */}
