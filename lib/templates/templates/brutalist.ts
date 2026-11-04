@@ -60,9 +60,9 @@ export function buildBrutalist(data: TemplateData): string {
     <div class="hero-right hero-anim">
       <img src="${img}" alt="${e(name)}" crossorigin="anonymous">
       <div class="hero-right-info">
-        <div class="stat-box"><div class="num">${profile.public_repos}</div><div class="lbl">Repositories</div></div>
-        <div class="stat-box"><div class="num">${profile.followers}</div><div class="lbl">Followers</div></div>
-        <div class="stat-box"><div class="num">${langs.length}</div><div class="lbl">Languages</div></div>
+        ${profile.public_repos > 0 ? `<div class="stat-box"><div class="num">${profile.public_repos}</div><div class="lbl">Repositories</div></div>` : ""}
+        ${profile.followers > 0 ? `<div class="stat-box"><div class="num">${profile.followers}</div><div class="lbl">Followers</div></div>` : ""}
+        ${langs.length > 0 ? `<div class="stat-box"><div class="num">${langs.length}</div><div class="lbl">Languages</div></div>` : ""}
       </div>
     </div>
   </section>

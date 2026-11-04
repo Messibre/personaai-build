@@ -40,7 +40,7 @@ export function buildTypographic(data: TemplateData): string {
     <div class="hero-title hero-anim">${e(role)}</div>
     <img src="${img}" alt="${e(name)}" class="hero-photo hero-anim hero-photo-parallax" crossorigin="anonymous">
     <div class="hero-name hero-anim">${e(name)}</div>
-    <div class="hero-role hero-anim">${e(profile.location || "Worldwide")}</div>
+    ${profile.location ? `<div class="hero-role hero-anim">${e(profile.location)}</div>` : ""}
   </section>
   <main>
   ${config.sections.includes("about") ? buildAbout(profile, aiBio, c.accent, repos) : ""}
