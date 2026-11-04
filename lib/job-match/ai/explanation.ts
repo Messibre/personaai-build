@@ -2,6 +2,7 @@ import { z } from "zod"
 import { callGemini } from "../../gemini"
 import type { EvidenceLedger } from "../report/ledger"
 import type { CompatibilityReport } from "../report/compatibility"
+import { aiDisabledReason, type AiDisabledReason } from "./config"
 
 const sentenceSchema = z.object({
   text: z.string().min(1),
@@ -16,9 +17,12 @@ export interface Explanation {
   sentences: z.infer<typeof sentenceSchema>[]
   aiEnhanced: boolean
   fallbackUsed?: boolean
+  fallbackReason?: FallbackReason
 }
 
-function fallback(report: CompatibilityReport, ledger: EvidenceLedger): Explanation {
+export type FallbackReason = AiDisabledReason | "ai_failed" | "ungrounded_output"
+
+function fallback(report: CompatibilityReport, ledger: EvidenceLedger, reason: FallbackReason): Explanation {
   const first = ledger.checks[0]
   const project = ledger.selectedProjects[0]
   const gap = ledger.checks.find((check) => check.status !== "covered")
@@ -28,12 +32,12 @@ function fallback(report: CompatibilityReport, ledger: EvidenceLedger): Explanat
     { text: gap ? `${gap.requirement.label} is ${gap.status}; the available data does not show a direct production example.` : "No important requirement gap was found in the available evidence.", type: "job_reference" as const, evidenceIds: [], requirementIds: gap ? [`R${ledger.checks.indexOf(gap) + 1}`] : [] },
     { text: "If you have used the missing requirement, add it to the relevant project details; otherwise do not claim it.", type: "framing" as const, evidenceIds: [], requirementIds: [] },
   ]
-  return { paragraph: sentences.map((sentence) => sentence.text).join(" "), sentences, aiEnhanced: false, fallbackUsed: true }
+  return { paragraph: sentences.map((sentence) => sentence.text).join(" "), sentences, aiEnhanced: false, fallbackUsed: true, fallbackReason: reason }
 }
 
 export async function explainCompatibility(ledger: EvidenceLedger, report: CompatibilityReport): Promise<Explanation> {
-  const base = fallback(report, ledger)
-  if (process.env.AI_ENHANCE !== "true" || (!process.env.GEMINI_API_KEY_1 && !process.env.GEMINI_API_KEY_2)) return base
+  const disabled = aiDisabledReason()
+  if (disabled) return fallback(report, ledger, disabled)
   try {
     const allowed = ledger.evidence.slice(0, 20).map((item) => `${item.id}: ${item.snippet}`).join("\n")
     const raw = await callGemini(`Write exactly 3 or 4 plain sentences explaining this compatibility result. Return JSON only: {"sentences":[{"text":"...","type":"proof|job_reference|framing","evidenceIds":[],"requirementIds":[]}]}. Do not invent facts. Use only these IDs and snippets.
@@ -47,9 +51,10 @@ ${allowed}`)
       evidenceIds: sentence.evidenceIds.filter((id) => ledger.evidence.some((item) => item.id === id)),
       requirementIds: sentence.requirementIds.filter((id) => ledger.requirements.some((item) => item.id === id)),
     }))
-    if (sentences.some((sentence) => sentence.type === "proof" && sentence.evidenceIds.length === 0)) return base
+    if (sentences.some((sentence) => sentence.type === "proof" && sentence.evidenceIds.length === 0)) return fallback(report, ledger, "ungrounded_output")
     return { paragraph: sentences.map((sentence) => sentence.text).join(" "), sentences, aiEnhanced: true }
-  } catch {
-    return base
+  } catch (error) {
+    console.error("[job-match] ai explanation failed:", error instanceof Error ? error.name : "unknown")
+    return fallback(report, ledger, "ai_failed")
   }
 }

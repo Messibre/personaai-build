@@ -137,7 +137,6 @@ export async function POST(request: Request) {
         files: fileInfos,
         projectSettings: { framework: null },
         target: "production",
-        public: true,
       }),
     })
 

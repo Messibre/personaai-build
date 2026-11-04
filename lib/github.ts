@@ -2,6 +2,26 @@ import type { EnrichedGitHubRepo, GitHubProfile, GitHubRepo } from "./types"
 
 const GITHUB_API = "https://api.github.com"
 
+export type GitHubErrorCode = "not_found" | "rate_limited" | "upstream"
+
+export class GitHubError extends Error {
+  constructor(
+    message: string,
+    public readonly code: GitHubErrorCode,
+  ) {
+    super(message)
+    this.name = "GitHubError"
+  }
+}
+
+function errorForStatus(status: number, username: string): GitHubError {
+  if (status === 404) return new GitHubError(`GitHub user "${username}" not found`, "not_found")
+  if (status === 403 || status === 429) {
+    return new GitHubError("GitHub API rate limit exceeded. Please try again later.", "rate_limited")
+  }
+  return new GitHubError(`GitHub API error: ${status}`, "upstream")
+}
+
 export async function fetchGitHubProfile(username: string): Promise<GitHubProfile> {
   const res = await fetch(`${GITHUB_API}/users/${encodeURIComponent(username)}`, {
     headers: {
@@ -10,17 +30,7 @@ export async function fetchGitHubProfile(username: string): Promise<GitHubProfil
     },
   })
 
-  if (res.status === 404) {
-    throw new Error(`GitHub user "${username}" not found`)
-  }
-
-  if (res.status === 403) {
-    throw new Error("GitHub API rate limit exceeded. Please try again later.")
-  }
-
-  if (!res.ok) {
-    throw new Error(`GitHub API error: ${res.status}`)
-  }
+  if (!res.ok) throw errorForStatus(res.status, username)
 
   const data = await res.json()
 
@@ -50,9 +60,7 @@ export async function fetchGitHubRepos(username: string): Promise<GitHubRepo[]> 
     }
   )
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch repos: ${res.status}`)
-  }
+  if (!res.ok) throw errorForStatus(res.status, username)
 
   const data = await res.json()
 

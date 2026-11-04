@@ -1,5 +1,6 @@
 import type { EvidenceItem, ProfileEvidence, ProfileProject } from "./types"
 import skills from "./skills.json"
+import { safeFetch } from "@/lib/security/safe-fetch"
 
 type Skill = (typeof skills)[number]
 type BlobValue = { text?: string } | { id?: string } | null
@@ -96,24 +97,77 @@ function buildProject(node: GithubNode): ProfileProject {
 
 const QUERY = `query($login: String!) { user(login: $login) { repositories(first: 100, isFork: false, orderBy: {field: PUSHED_AT, direction: DESC}, privacy: PUBLIC) { nodes { name description url pushedAt stargazerCount isArchived primaryLanguage { name } languages(first: 8, orderBy: {field: SIZE, direction: DESC}) { edges { size node { name } } } repositoryTopics(first: 15) { nodes { topic { name } } } } } } }`
 
+type RestRepo = {
+  name: string
+  description: string | null
+  html_url: string
+  pushed_at: string
+  stargazers_count: number
+  archived: boolean
+  fork: boolean
+  language: string | null
+  topics?: string[]
+}
+
+const GITHUB_HEADERS = { Accept: "application/json", "User-Agent": "PersonaAI-Job-Match/1.0" }
+
+function assertGithubOk(response: Response) {
+  if (response.ok) return
+  if (response.status === 401) throw new Error("GitHub rejected GITHUB_TOKEN. Check that the token is valid and has not expired.")
+  const exhausted = response.headers.get("x-ratelimit-remaining") === "0"
+  if (response.status === 429 || (response.status === 403 && exhausted)) throw new Error("GitHub rate limit reached. Please try again later.")
+  if (response.status === 403) throw new Error("GitHub denied the request. Set GITHUB_TOKEN to authenticate this server.")
+  if (response.status === 404) throw new Error("GitHub user was not found.")
+  throw new Error(`GitHub returned ${response.status}. Please check the username and try again.`)
+}
+
+async function fetchNodesGraphql(login: string, token: string, signal: AbortSignal): Promise<GithubNode[]> {
+  const response = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: { ...GITHUB_HEADERS, "Content-Type": "application/json", Authorization: `bearer ${token}` },
+    body: JSON.stringify({ query: QUERY, variables: { login } }),
+    signal,
+  })
+  assertGithubOk(response)
+  const payload = await response.json() as { data?: { user?: { repositories: { nodes: GithubNode[] } } }; errors?: Array<{ message: string }> }
+  if (payload.errors?.length) throw new Error(payload.errors[0].message)
+  if (!payload.data?.user) throw new Error("GitHub user was not found.")
+  return payload.data.user.repositories.nodes
+}
+
+// The GraphQL API rejects anonymous callers, so without a token we read the public REST listing instead.
+// It has no per-repo language breakdown, so only the primary language is available as evidence.
+async function fetchNodesRest(login: string): Promise<GithubNode[]> {
+  const url = `https://api.github.com/users/${encodeURIComponent(login)}/repos?type=owner&sort=pushed&per_page=100`
+  const response = await safeFetch(url, {
+    headers: GITHUB_HEADERS,
+    timeoutMs: 20000,
+    isHostAllowed: (hostname) => hostname === "api.github.com",
+  })
+  assertGithubOk(response)
+  const repos = await response.json() as RestRepo[]
+  return repos.filter((repo) => !repo.fork).map((repo) => ({
+    name: repo.name,
+    description: repo.description,
+    url: repo.html_url,
+    pushedAt: repo.pushed_at,
+    stargazerCount: repo.stargazers_count,
+    isArchived: repo.archived,
+    primaryLanguage: repo.language ? { name: repo.language } : null,
+    languages: { edges: repo.language ? [{ size: 1, node: { name: repo.language } }] : [] },
+    repositoryTopics: { nodes: (repo.topics ?? []).map((topic) => ({ topic: { name: topic } })) },
+  }))
+}
+
 export async function fetchProfileEvidence(login: string, forceRefresh = false): Promise<ProfileEvidence> {
   const cached = cache.get(login.toLowerCase())
   if (!forceRefresh && cached && cached.expires > Date.now()) return cached.value
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 20000)
   try {
-    const response = await fetch("https://api.github.com/graphql", {
-      method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": "PersonaAI-Job-Match/1.0", ...(process.env.GITHUB_TOKEN ? { Authorization: `bearer ${process.env.GITHUB_TOKEN}` } : {}) },
-      body: JSON.stringify({ query: QUERY, variables: { login } }),
-      signal: controller.signal,
-    })
-    if (response.status === 403 || response.status === 429) throw new Error("GitHub rate limit reached. Please try again later.")
-    if (!response.ok) throw new Error(`GitHub returned ${response.status}. Please check the username and try again.`)
-    const payload = await response.json() as { data?: { user?: { repositories: { nodes: GithubNode[] } } }; errors?: Array<{ message: string }> }
-    if (payload.errors?.length) throw new Error(payload.errors[0].message)
-    if (!payload.data?.user) throw new Error("GitHub user was not found.")
-    const projects = payload.data.user.repositories.nodes.filter((node) => !node.isArchived).map(buildProject)
+    const token = process.env.GITHUB_TOKEN
+    const nodes = token ? await fetchNodesGraphql(login, token, controller.signal) : await fetchNodesRest(login)
+    const projects = nodes.filter((node) => !node.isArchived).map(buildProject)
     const value = { login, projects, items: projects.flatMap((project) => project.evidence), fetchedAt: new Date().toISOString() }
     cache.set(login.toLowerCase(), { expires: Date.now() + TTL_MS, value })
     return value

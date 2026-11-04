@@ -7,6 +7,7 @@ import type {
 } from "@/lib/types";
 import { enrichReposForAI } from "@/lib/github";
 import { getLLMClient } from "@/lib/llm";
+import { isRecord, readJsonBody } from "@/lib/api/read-json";
 import * as cheerio from "cheerio";
 
 // One slow Gemini call plus a single non-JSON retry must fit inside the function limit.
@@ -234,39 +235,41 @@ function extractJsonObject(text: string): string | null {
   return null;
 }
 
-const MAX_BODY_BYTES = 1_048_576; // ~1 MB
-
 export async function POST(request: Request) {
   try {
     const requestStartedAt = Date.now();
 
-    const contentLength = request.headers.get("content-length");
-    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
-      return Response.json({ error: "Payload too large" }, { status: 413 });
+    const body = await readJsonBody(request);
+    if (!body.ok) return body.response;
+    if (!isRecord(body.data)) {
+      return Response.json(
+        { error: "Request body must be a JSON object." },
+        { status: 400 },
+      );
     }
 
-    const rawBody = await request.text();
-    if (rawBody.length > MAX_BODY_BYTES) {
-      return Response.json({ error: "Payload too large" }, { status: 413 });
-    }
-
-    let data: AIContentRequest;
-    try {
-      data = JSON.parse(rawBody);
-    } catch {
-      return Response.json({ error: "Invalid JSON" }, { status: 400 });
-    }
+    const data = body.data as Partial<AIContentRequest>;
     const {
       targetRole,
-      externalLinks = [],
-      github = { profile: null, repos: [] },
       resumeText = null,
       notionContent = null,
       additionalPrompt,
     } = data;
+    const github = {
+      profile: data.github?.profile ?? null,
+      repos: Array.isArray(data.github?.repos) ? data.github.repos : [],
+    };
+    const externalLinks = Array.isArray(data.externalLinks)
+      ? data.externalLinks.filter(
+          (link): link is string => typeof link === "string",
+        )
+      : [];
 
     // targetRole is optional — if missing, AI generates based on repos/links alone
-    const resolvedRole = targetRole?.trim() || "Software Developer";
+    const resolvedRole =
+      typeof targetRole === "string" && targetRole.trim()
+        ? targetRole.trim()
+        : "Software Developer";
 
     // Step 1: Scrape external links in parallel (max 3 — keep total latency low)
     const scrapeStartedAt = Date.now();
@@ -293,7 +296,7 @@ export async function POST(request: Request) {
     const reposDurationMs = Date.now() - reposStartedAt;
 
     const name = github.profile?.name || github.profile?.username || "User";
-    const debugMode = Boolean((data as any)?.debug);
+    const debugMode = Boolean(data.debug);
 
     // Step 3: Single Gemini call — personality-first approach
     // The scraped content is the PRIMARY signal for voice, tone, and personality.

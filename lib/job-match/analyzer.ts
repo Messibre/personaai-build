@@ -1,5 +1,6 @@
 import skills from "./skills.json"
 import { callGemini } from "../gemini"
+import { aiDisabledReason } from "./ai/config"
 import type { JobAnalysis, JobRequirement, JobRoleType } from "./types"
 import { z } from "zod"
 
@@ -98,7 +99,7 @@ function parseGeminiResponse(value: string): JobAnalysis {
 
 export async function analyzeJob(jobText: string): Promise<JobAnalysis> {
   const fallback = deterministicAnalysis(jobText)
-  if (process.env.AI_ENHANCE !== "true" || (!process.env.GEMINI_API_KEY_1 && !process.env.GEMINI_API_KEY_2)) return fallback
+  if (aiDisabledReason()) return fallback
   try {
     const result = parseGeminiResponse(await callGemini(`Analyze only the concrete requirements in this job posting. Return only JSON with this exact shape:
 {"roleTitle":"string","roleType":"frontend|ux-engineer|ai-ml|fullstack|backend|devops|mobile|other","roleMargin":0,"mustHaveRequirements":[{"skillId":"use-a-skill-id-from-the-posting","label":"string","aliases":["string"],"tier":"must","quote":"exact sentence from posting","confidence":0.9}],"niceToHaveRequirements":[],"values":[]}
@@ -107,7 +108,8 @@ Do not invent skills, evidence, or requirements. Ignore benefits, legal text, an
 JOB POSTING:
 ${jobText.slice(0, 15000)}`))
     return result
-  } catch {
+  } catch (error) {
+    console.error("[job-match] ai job analysis failed:", error instanceof Error ? error.name : "unknown")
     return fallback
   }
 }
