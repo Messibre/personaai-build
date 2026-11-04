@@ -25,10 +25,106 @@ const PROMISES = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
-        <span className="text-lg font-semibold tracking-tight">PersonaAI</span>
-        <ThemeToggle />
+    <main className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <header className="relative overflow-hidden">
+        {/* Background grid */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.04] dark:opacity-[0.06]"
+          style={{
+            backgroundImage: "linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
+        {/* Background gradient */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse 80% 50% at 50% -20%, color-mix(in oklch, var(--persona-accent) 15%, transparent), transparent)"
+          }}
+        />
+
+        {/* Navigation */}
+        <nav className="relative z-20 flex items-center justify-between px-4 sm:px-8 lg:px-12 py-4 sm:py-6">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center size-9 rounded-xl bg-[var(--persona-accent)] text-[var(--persona-bg)] shadow-lg shadow-[var(--persona-accent)]/20">
+              <Sparkles className="size-4" />
+            </div>
+            <span className="text-xl font-bold tracking-tight text-foreground">
+              Persona<span className="text-[var(--persona-accent)]">AI</span>
+            </span>
+          </div>
+
+          {/* Nav links - hidden on mobile */}
+          <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
+            <Link href="#how-it-works" className="hover:text-foreground transition-colors">How it works</Link>
+            <Link href="#templates" className="hover:text-foreground transition-colors">Templates</Link>
+            <Link href="/job-match" className="hover:text-foreground transition-colors">Job Match</Link>
+          </div>
+
+          {/* Right side */}
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
+        </nav>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-background/95 backdrop-blur-lg border-b border-border z-50 animate-fade-in-up">
+            <div className="flex flex-col p-4 gap-2">
+              <Link
+                href="#how-it-works"
+                className="py-3 px-4 rounded-lg hover:bg-secondary transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                How it works
+              </Link>
+              <Link
+                href="#templates"
+                className="py-3 px-4 rounded-lg hover:bg-secondary transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Templates
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Hero content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 pt-8 sm:pt-12 lg:pt-16 pb-8 sm:pb-12">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+
+            {/* Left side - Headline */}
+            <div className="space-y-6 sm:space-y-8 text-center lg:text-left">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-foreground leading-[1.1] text-balance animate-fade-in-up">
+                Create a{" "}
+                <span className="italic font-serif text-[var(--persona-accent)] relative">stunning</span>{" "}
+                portfolio that gets you noticed
+              </h1>
+
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed text-balance animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+                AI-powered portfolio generator for Professionals, Students, Entrepreneurs, and Freelancers.
+              </p>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Logo Marquee - Integration logos animation */}
+        <div className="relative z-10 border-y border-border/50 bg-secondary/20">
+          <div className="max-w-7xl mx-auto">
+            <LogoMarquee />
+          </div>
+        </div>
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-4 pb-20 pt-10 sm:pt-16">
