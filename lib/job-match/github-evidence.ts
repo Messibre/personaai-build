@@ -119,10 +119,10 @@ export async function fetchProfileEvidence(login: string, forceRefresh = false):
     return value
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("GitHub took too long to respond. Please try again or refresh your GitHub data.")
+      throw new Error("GitHub took too long to respond. Please try again or refresh your GitHub data.", { cause: error })
     }
     if (error instanceof TypeError && error.message.toLowerCase().includes("fetch")) {
-      throw new Error("GitHub could not be reached from this server. Check the deployment network and try again.")
+      throw new Error("GitHub could not be reached from this server. Check the deployment network and try again.", { cause: error })
     }
     throw error
   } finally {

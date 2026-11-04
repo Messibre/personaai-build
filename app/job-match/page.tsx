@@ -49,7 +49,7 @@ export default function JobMatchPage() {
         body: JSON.stringify({ jobText: jobText || undefined, jobUrl: jobUrl || undefined, githubUsername, resumeText: resumeText || undefined, refresh: forceRefresh }),
         })
       } catch (err) {
-        if (err instanceof TypeError) throw new Error("Couldn't reach the server, try again.")
+        if (err instanceof TypeError) throw new Error("Couldn't reach the server, try again.", { cause: err })
         throw err
       }
       const contentType = response.headers.get("content-type") || ""

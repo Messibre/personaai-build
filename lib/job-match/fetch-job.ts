@@ -1,47 +1,41 @@
-import dns from "node:dns/promises"
+import { SafeFetchError, assertPublicHttpUrl, readLimitedText, safeFetch } from "@/lib/security/safe-fetch"
 
 const MAX_TEXT = 15000
 const MAX_BYTES = 2 * 1024 * 1024
 const MAX_REDIRECTS = 3
 const BLOCKED_HOSTS = /(^|\.)linkedin\.com$|(^|\.)indeed\.com$|(^|\.)glassdoor\./i
-
-function isPrivateAddress(address: string): boolean {
-  const value = address.toLowerCase()
-  if (value === "::1" || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe80:")) return true
-  if (/^(10|127)\./.test(value) || /^192\.168\./.test(value) || /^169\.254\./.test(value) || value === "0.0.0.0") return true
-  const match = value.match(/^172\.(\d+)\./)
-  return Boolean(match && Number(match[1]) >= 16 && Number(match[1]) <= 31)
-}
-
-async function validateResolved(url: URL): Promise<void> {
-  if (!["http:", "https:"].includes(url.protocol)) throw new Error("That URL cannot be fetched. Please paste the job description instead.")
-  if (BLOCKED_HOSTS.test(url.hostname)) throw new Error("This site blocks automatic reading. Paste the job description instead.")
-  const addresses = await dns.lookup(url.hostname, { all: true })
-  if (!addresses.length || addresses.some((entry) => isPrivateAddress(entry.address))) throw new Error("That URL cannot be fetched. Please paste the job description instead.")
-}
+const PASTE_FALLBACK = "That URL cannot be fetched. Please paste the job description instead."
+const BLOCKS_READING = "This site blocks automatic reading. Paste the job description instead."
 
 export function validateJobUrl(value: string): URL {
-  const url = new URL(value)
-  if (!["http:", "https:"].includes(url.protocol)) throw new Error("Please provide a valid job URL.")
-  if (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "::1" || /^10\.|^192\.168\.|^169\.254\./.test(url.hostname)) {
-    throw new Error("That URL cannot be fetched. Please paste the job description instead.")
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch (error) {
+    throw new Error("Please provide a valid job URL.", { cause: error })
   }
-  return url
+  if (!["http:", "https:"].includes(url.protocol)) throw new Error("Please provide a valid job URL.")
+  try {
+    return assertPublicHttpUrl(url)
+  } catch (error) {
+    throw new Error(PASTE_FALLBACK, { cause: error })
+  }
 }
 
-async function readBody(response: Response): Promise<string> {
-  const reader = response.body?.getReader()
-  if (!reader) return (await response.text()).slice(0, MAX_TEXT)
-  const chunks: Uint8Array[] = []
-  let total = 0
-  while (true) {
-    const part = await reader.read()
-    if (part.done) break
-    total += part.value.byteLength
-    if (total > MAX_BYTES) throw new Error("The job page is too large. Please paste the job description instead.")
-    chunks.push(part.value)
+function toUserError(error: unknown): Error {
+  if (!(error instanceof SafeFetchError)) return error instanceof Error ? error : new Error(PASTE_FALLBACK)
+  switch (error.code) {
+    case "host_not_allowed":
+      return new Error(BLOCKS_READING, { cause: error })
+    case "too_many_redirects":
+      return new Error("The job page redirected too many times. Please paste the job description instead.", { cause: error })
+    case "too_large":
+      return new Error("The job page is too large. Please paste the job description instead.", { cause: error })
+    case "network":
+      return new Error("We could not fetch that job page. Please paste the job description instead.", { cause: error })
+    default:
+      return new Error(PASTE_FALLBACK, { cause: error })
   }
-  return new TextDecoder().decode(Buffer.concat(chunks)).slice(0, MAX_TEXT)
 }
 
 function jsonLdText(html: string): string {
@@ -69,9 +63,9 @@ function htmlText(html: string): string {
 }
 
 async function fetchJson(url: string): Promise<string> {
-  const response = await fetch(url, { headers: { Accept: "application/json", "User-Agent": "PersonaAI-Job-Match/1.0" }, signal: AbortSignal.timeout(8000) })
+  const response = await safeFetch(url, { headers: { Accept: "application/json", "User-Agent": "PersonaAI-Job-Match/1.0" }, maxRedirects: 0 })
   if (!response.ok) throw new Error("ATS endpoint unavailable")
-  const data = await response.json() as Record<string, unknown>
+  const data = JSON.parse(await readLimitedText(response, MAX_BYTES)) as Record<string, unknown>
   return String(data.content || data.description || data.text || "")
 }
 
@@ -86,24 +80,25 @@ async function knownAts(url: URL): Promise<string> {
 }
 
 export async function fetchJobPosting(value: string): Promise<string> {
-  let url = validateJobUrl(value)
-  await validateResolved(url)
+  const url = validateJobUrl(value)
+  if (BLOCKED_HOSTS.test(url.hostname)) throw new Error(BLOCKS_READING)
   const ats = await knownAts(url).catch(() => "")
   if (ats.length >= 300) return ats.slice(0, MAX_TEXT)
-  for (let attempt = 0; attempt <= MAX_REDIRECTS; attempt++) {
-    const response = await fetch(url, { headers: { Accept: "text/html,application/xhtml+xml,text/plain", "User-Agent": "Mozilla/5.0 (compatible; PersonaAI-Job-Match/1.0)" }, redirect: "manual", signal: AbortSignal.timeout(8000) })
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location")
-      if (!location || attempt === MAX_REDIRECTS) throw new Error("The job page redirected too many times. Please paste the job description instead.")
-      url = validateJobUrl(new URL(location, url).toString())
-      await validateResolved(url)
-      continue
-    }
-    if (!response.ok) throw new Error("We could not fetch that job page. Please paste the job description instead.")
-    const html = await readBody(response)
-    const text = jsonLdText(html) || htmlText(html)
-    if (text.length < 300) throw new Error("This site blocks automatic reading. Paste the job description instead.")
-    return text
+
+  let html: string
+  try {
+    const response = await safeFetch(url, {
+      headers: { Accept: "text/html,application/xhtml+xml,text/plain", "User-Agent": "Mozilla/5.0 (compatible; PersonaAI-Job-Match/1.0)" },
+      maxRedirects: MAX_REDIRECTS,
+      isHostAllowed: (hostname) => !BLOCKED_HOSTS.test(hostname),
+    })
+    if (!response.ok) throw new SafeFetchError("Unexpected status", "network")
+    html = (await readLimitedText(response, MAX_BYTES)).slice(0, MAX_TEXT)
+  } catch (error) {
+    throw toUserError(error)
   }
-  throw new Error("We could not fetch that job page. Please paste the job description instead.")
+
+  const text = jsonLdText(html) || htmlText(html)
+  if (text.length < 300) throw new Error(BLOCKS_READING)
+  return text
 }
