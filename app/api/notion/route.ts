@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-
-const MAX_BODY_BYTES = 1_048_576 // ~1 MB
+import { isRecord, readJsonBody } from "@/lib/api/read-json"
 
 export function extractPageId(url: string): string | null {
   try {
@@ -37,24 +36,10 @@ function formatPageId(raw: string): string {
 
 export async function POST(request: Request) {
   try {
-    const contentLength = request.headers.get("content-length")
-    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
-      return NextResponse.json({ error: "Payload too large" }, { status: 413 })
-    }
+    const body = await readJsonBody(request)
+    if (!body.ok) return body.response
 
-    const rawBody = await request.text()
-    if (rawBody.length > MAX_BODY_BYTES) {
-      return NextResponse.json({ error: "Payload too large" }, { status: 413 })
-    }
-
-    let body: unknown
-    try {
-      body = JSON.parse(rawBody)
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
-    }
-
-    const { url } = (body && typeof body === "object" ? body : {}) as { url?: unknown }
+    const url = isRecord(body.data) ? body.data.url : undefined
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ content: null, error: "URL is required" }, { status: 400 })

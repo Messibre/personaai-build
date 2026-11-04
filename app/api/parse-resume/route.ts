@@ -1,68 +1,57 @@
-// Force Node.js runtime — pdf-parse uses Node Buffer/fs APIs that are
-// unavailable in the Edge runtime and require the full Node environment
-// that Vercel's serverless functions provide.
+// pdf-parse relies on Node Buffer APIs, so this route must run on the Node.js runtime.
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const PDF_MAGIC = "%PDF-";
+
+function looksLikePdf(buffer: Buffer): boolean {
+  return buffer.subarray(0, PDF_MAGIC.length).toString("latin1") === PDF_MAGIC;
+}
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file");
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    if (file.type !== "application/pdf") {
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: "File size exceeds 5MB limit" },
+        { status: 413 },
+      );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // file.type is client-supplied, so verify the actual content too.
+    if (file.type !== "application/pdf" || !looksLikePdf(buffer)) {
       return NextResponse.json(
         { error: "Only PDF files are accepted" },
         { status: 400 },
       );
     }
 
-    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-    if (file.size > MAX_SIZE) {
-      return NextResponse.json(
-        { error: "File size exceeds 5MB limit" },
-        { status: 400 },
-      );
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // pdf-parse is a pure Node.js library — no worker, no canvas, no filesystem
-    // path issues. Works reliably in Vercel serverless functions.
-    let text = "";
+    let text: string;
     try {
-      // Dynamic import keeps the bundle lean and avoids Turbopack static analysis
+      // Dynamic import keeps pdf-parse out of the module graph until it is needed.
       const pdfParse = (await import("pdf-parse")).default;
       const result = await pdfParse(buffer);
       text = result.text?.trim() ?? "";
-    } catch (primaryErr) {
-      // Fallback: pdfjs-dist in legacy mode without a worker
-      console.log("[v0] pdf-parse failed, falling back to pdfjs-dist:", primaryErr);
-      try {
-        const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.js");
-        const pdfjs = (pdfjsLib as any).default ?? pdfjsLib;
-        // Disable the worker entirely so pdfjs runs synchronously in-process
-        pdfjs.GlobalWorkerOptions = pdfjs.GlobalWorkerOptions ?? {};
-        pdfjs.GlobalWorkerOptions.workerSrc = "";
-
-        const loadingTask = pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) });
-        const pdf = await loadingTask.promise;
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map((it: any) => it.str).join(" ") + "\n";
-        }
-        text = text.trim();
-      } catch (fallbackErr) {
-        console.log("[v0] pdfjs-dist fallback also failed:", fallbackErr);
-        throw fallbackErr;
-      }
+    } catch (parseErr) {
+      // A PDF that pdf-parse rejects is a problem with the file, not the server.
+      console.warn("[parse-resume] unreadable PDF:", parseErr);
+      return NextResponse.json(
+        {
+          error:
+            "This PDF could not be read. It may be corrupted or password-protected. Try exporting it again.",
+        },
+        { status: 422 },
+      );
     }
 
     if (!text) {
@@ -75,11 +64,13 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ text, parserUsed: "pdf-parse" });
+    return NextResponse.json({ text });
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Failed to parse resume";
-    console.error("[v0] parse-resume error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const traceId = crypto.randomUUID();
+    console.error(`[parse-resume] error [${traceId}]:`, err);
+    return NextResponse.json(
+      { error: "Failed to parse resume", traceId },
+      { status: 500 },
+    );
   }
 }
