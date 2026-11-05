@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import { buildPortfolioHtml } from "@/lib/templates"
 import type { AIProject, SocialLinks, PortfolioConfig, ColorScheme, SectionId, TemplateStyle, GitHubProfile, GitHubRepo } from "@/lib/types"
 import { getLLMClient } from "@/lib/llm"
@@ -106,7 +107,9 @@ function buildSyntheticRepos(projects: AIProject[]): GitHubRepo[] {
   }))
 }
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "ai-template", max: 5, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const data: AITemplateRequest = await request.json()
     const { targetRole, name, aboutMe, heroTagline, projects, skills, colorScheme, refinementPrompt, currentTemplate, currentColorScheme } = data

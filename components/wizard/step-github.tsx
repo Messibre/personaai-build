@@ -1,5 +1,6 @@
 "use client"
 
+import { guardedFetch, rateLimitMessage } from "@/lib/security/guarded-fetch"
 import { useCallback, type Dispatch } from "react"
 import type { WizardState, WizardAction } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -26,7 +27,7 @@ export function StepGithub({ state, dispatch, onNext }: StepGithubProps) {
     dispatch({ type: "SET_GITHUB_LOADING", loading: true })
 
     try {
-      const res = await fetch("/api/github", {
+      const res = await guardedFetch("/api/github", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: github.username.trim() }),
@@ -35,7 +36,7 @@ export function StepGithub({ state, dispatch, onNext }: StepGithubProps) {
       const data = await res.json()
 
       if (!res.ok) {
-        dispatch({ type: "SET_GITHUB_ERROR", error: getFriendlyServerStatusMessage(res.status, "github") || getFriendlyErrorMessage(data.error, "github") })
+        dispatch({ type: "SET_GITHUB_ERROR", error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "github") || getFriendlyErrorMessage(data.error, "github") })
         return
       }
 

@@ -30,7 +30,7 @@ export default function Home() {
         <span className="text-lg font-semibold tracking-tight">PersonaAI</span>
         <nav aria-label="Main" className="flex items-center gap-4 text-sm text-muted-foreground">
           <Link href="/job-match" className="transition-colors hover:text-foreground">
-            Job Match
+            Quick fit check
           </Link>
           <ThemeToggle />
         </nav>

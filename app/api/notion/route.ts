@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import { NextResponse } from "next/server"
 import { isRecord, readJsonBody } from "@/lib/api/read-json"
 
@@ -34,7 +35,9 @@ function formatPageId(raw: string): string {
   return `${clean.slice(0, 8)}-${clean.slice(8, 12)}-${clean.slice(12, 16)}-${clean.slice(16, 20)}-${clean.slice(20)}`
 }
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "notion", max: 5, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const body = await readJsonBody(request)
     if (!body.ok) return body.response

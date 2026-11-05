@@ -1,5 +1,6 @@
 "use client"
 
+import { guardedFetch, rateLimitMessage } from "@/lib/security/guarded-fetch"
 import { useCallback, useEffect, useRef, useState, type Dispatch } from "react"
 import type { WizardState, WizardAction } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -100,7 +101,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
     try {
       if (config.useAITemplate) {
         const skills = [...new Set(github.repos.map((r) => r.language).filter(Boolean))] as string[]
-        const res = await fetch("/api/ai-template", {
+        const res = await guardedFetch("/api/ai-template", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -121,7 +122,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
         })
         const data = await res.json()
         if (!res.ok) {
-          dispatch({ type: "SET_PORTFOLIO_ERROR", error: getFriendlyServerStatusMessage(res.status, "template") || getFriendlyErrorMessage(data.error, "template") })
+          dispatch({ type: "SET_PORTFOLIO_ERROR", error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "template") || getFriendlyErrorMessage(data.error, "template") })
           setIsGenerating(false)
           return
         }
@@ -137,7 +138,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
         return
       }
 
-      const res = await fetch("/api/generate", {
+      const res = await guardedFetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +155,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
       })
       const data = await res.json()
       if (!res.ok) {
-        dispatch({ type: "SET_PORTFOLIO_ERROR", error: getFriendlyServerStatusMessage(res.status, "portfolio") || getFriendlyErrorMessage(data.error, "portfolio") })
+        dispatch({ type: "SET_PORTFOLIO_ERROR", error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "portfolio") || getFriendlyErrorMessage(data.error, "portfolio") })
         setIsGenerating(false)
         return
       }
@@ -258,13 +259,13 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
     try {
       setDeployStatus("deploying")
       const sanitizedName = deployName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").substring(0, 40) || "my-portfolio"
-      const res = await fetch("/api/deploy", {
+      const res = await guardedFetch("/api/deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ html: portfolio.html, projectName: sanitizedName }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(getFriendlyServerStatusMessage(res.status, "deploy") || getFriendlyErrorMessage(data.error, "deploy"))
+      if (!res.ok) throw new Error(rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "deploy") || getFriendlyErrorMessage(data.error, "deploy"))
       setDeployUrl(data.url)
       setDeployStatus("ready")
     } catch (err) {
@@ -296,7 +297,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
     setIsRefining(true)
     try {
       const skills = [...new Set(github.repos.map((r) => r.language).filter(Boolean))] as string[]
-      const res = await fetch("/api/ai-template", {
+      const res = await guardedFetch("/api/ai-template", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -319,7 +320,7 @@ export function StepPreview({ state, dispatch, onBack }: StepPreviewProps) {
       })
       const data = await res.json()
       if (!res.ok) {
-        dispatch({ type: "SET_PORTFOLIO_ERROR", error: getFriendlyServerStatusMessage(res.status, "template") || getFriendlyErrorMessage(data.error, "template") })
+        dispatch({ type: "SET_PORTFOLIO_ERROR", error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "template") || getFriendlyErrorMessage(data.error, "template") })
         setIsRefining(false)
         return
       }

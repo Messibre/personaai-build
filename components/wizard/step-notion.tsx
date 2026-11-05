@@ -1,5 +1,6 @@
 "use client"
 
+import { guardedFetch, rateLimitMessage } from "@/lib/security/guarded-fetch"
 import { useCallback, type Dispatch } from "react"
 import type { WizardState, WizardAction } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -25,7 +26,7 @@ export function StepNotion({ state, dispatch, onNext, onBack }: StepNotionProps)
     dispatch({ type: "SET_NOTION_LOADING", loading: true })
 
     try {
-      const res = await fetch("/api/notion", {
+      const res = await guardedFetch("/api/notion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: notion.url.trim() }),
@@ -38,7 +39,7 @@ export function StepNotion({ state, dispatch, onNext, onBack }: StepNotionProps)
       } else {
         dispatch({
           type: "SET_NOTION_ERROR",
-          error: getFriendlyServerStatusMessage(res.status, "notion") || getFriendlyErrorMessage(data.error, "notion"),
+          error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "notion") || getFriendlyErrorMessage(data.error, "notion"),
         })
       }
     } catch (err) {

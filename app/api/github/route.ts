@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import { NextResponse } from "next/server"
 import { GitHubError, fetchGitHubProfile, fetchGitHubRepos } from "@/lib/github"
 import { isRecord, readJsonBody } from "@/lib/api/read-json"
@@ -8,7 +9,9 @@ const STATUS_BY_CODE = {
   upstream: 502,
 } as const
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "github", max: 10, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const body = await readJsonBody(request, 10_000)
     if (!body.ok) return body.response

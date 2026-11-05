@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import type { GitHubProfile, GitHubRepo, PortfolioConfig, AIProject, AIGeneratedContent } from "@/lib/types"
 import { buildPortfolioHtml } from "@/lib/templates"
 import { getLLMClient } from "@/lib/llm"
@@ -110,7 +111,9 @@ function buildFallbackAboutMe(profile: GitHubProfile, repos: GitHubRepo[]): stri
 // The generate payload carries a base64 photo, so allow more than the 1 MB default.
 const MAX_GENERATE_BODY_BYTES = 8 * 1024 * 1024
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "generate", max: 5, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const body = await readJsonBody(request, MAX_GENERATE_BODY_BYTES)
     if (!body.ok) return body.response

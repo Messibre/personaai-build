@@ -1,5 +1,6 @@
 "use client"
 
+import { guardedFetch, rateLimitMessage } from "@/lib/security/guarded-fetch"
 import { useState, useCallback, useRef, type Dispatch } from "react"
 import type { WizardState, WizardAction } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -36,14 +37,14 @@ export function StepStart({ state, dispatch, onNext }: StepStartProps) {
     if (!github.username.trim()) return
     dispatch({ type: "SET_GITHUB_LOADING", loading: true })
     try {
-      const res = await fetch("/api/github", {
+      const res = await guardedFetch("/api/github", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: github.username.trim() }),
       })
       const data = await res.json()
       if (!res.ok) {
-        dispatch({ type: "SET_GITHUB_ERROR", error: getFriendlyServerStatusMessage(res.status, "github") || getFriendlyErrorMessage(data.error, "github") })
+        dispatch({ type: "SET_GITHUB_ERROR", error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "github") || getFriendlyErrorMessage(data.error, "github") })
         return
       }
       dispatch({ type: "SET_GITHUB_DATA", profile: data.profile, repos: data.repos })
@@ -57,7 +58,7 @@ export function StepStart({ state, dispatch, onNext }: StepStartProps) {
     if (!notion.url.trim()) return
     dispatch({ type: "SET_NOTION_LOADING", loading: true })
     try {
-      const res = await fetch("/api/notion", {
+      const res = await guardedFetch("/api/notion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: notion.url.trim() }),
@@ -66,7 +67,7 @@ export function StepStart({ state, dispatch, onNext }: StepStartProps) {
       if (data.content) {
         dispatch({ type: "SET_NOTION_CONTENT", content: data.content })
       } else {
-        dispatch({ type: "SET_NOTION_ERROR", error: getFriendlyServerStatusMessage(res.status, "notion") || getFriendlyErrorMessage(data.error, "notion") })
+        dispatch({ type: "SET_NOTION_ERROR", error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "notion") || getFriendlyErrorMessage(data.error, "notion") })
       }
     } catch (err) {
       dispatch({ type: "SET_NOTION_ERROR", error: getFriendlyErrorMessage(err, "notion") })

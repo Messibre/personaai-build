@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import type {
   EnrichedGitHubRepo,
   GitHubProfile,
@@ -235,7 +236,9 @@ function extractJsonObject(text: string): string | null {
   return null;
 }
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "ai-content", max: 5, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const requestStartedAt = Date.now();
 

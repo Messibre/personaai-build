@@ -1,6 +1,7 @@
 // pdf-parse relies on Node Buffer APIs, so this route must run on the Node.js runtime.
 export const runtime = "nodejs";
 
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import { NextResponse } from "next/server";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -10,7 +11,9 @@ function looksLikePdf(buffer: Buffer): boolean {
   return buffer.subarray(0, PDF_MAGIC.length).toString("latin1") === PDF_MAGIC;
 }
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "parse-resume", max: 5, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const formData = await request.formData();
     const file = formData.get("file");

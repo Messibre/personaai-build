@@ -37,9 +37,22 @@ lib/tailor/     orchestrator for the paste-job-to-output flow, plus edit re-chec
 lib/metrics/    return-loop metrics and feedback
 lib/security/   guards and rate limits that protect the Gemini quota
 lib/llm/        LLMClient, MockClient and structured.ts (generateStructured)
+lib/job/        analyzeJob, detectGaps, pickProjects (job profile, gaps, project picking)
+lib/check/      checkDraft and token helpers (re-check drafts against confirmed facts)
+lib/job-match/  Quick fit check: rules-based GitHub-vs-job report and cover letter (secondary)
 ```
 
 Routes live in `app/api/{vault,import,questions,tailor,admin}/` and stay thin. Pages: `/` (landing), `/vault`, `/tailor`, `/admin`. The old wizard lives at `/legacy` (noindex) and is frozen.
+
+### The three flows
+
+| Flow | Pages | Routes | Status |
+|------|-------|--------|--------|
+| Vault and tailoring | `/vault`, `/tailor` | `app/api/{vault,import,questions,tailor}` | Active; the product |
+| Quick fit check | `/job-match` | `app/api/job-match/**` | Active, secondary; links to `/vault`. Logic frozen during integration |
+| Legacy generator | `/legacy` | `app/api/{generate,ai-content,ai-template,github,notion,parse-resume,deploy}` | Frozen; deploy off unless `ENABLE_LEGACY_DEPLOY=true` |
+
+Every exported `app/api/**/route.ts` handler must be wrapped in `withGuards` or `withRateLimit` (`lib/security/guard.ts`); `tests/scripts/guard-coverage.test.ts` enforces this with an explicit allowlist (vault GET, admin metrics).
 
 ### Lessons paused
 
@@ -63,6 +76,7 @@ Edit **only** the paths of your task (plus its tests). A task may not touch `lib
 | P1 | `p1-persistence` | `lib/vault/**`, `app/api/vault/**`, `tests/vault/**`, `.env.example` |
 | T1 | `t1-template-audit` | **Overrides** the templates rule: `lib/templates/**`, `tests/templates/**`, `docs/template-audit.md` |
 | Z1 | `z1-guards` | `lib/security/**`, `app/api/tailor/**`, `app/api/import/**`, `app/api/questions/**`, `tests/security/guards.test.ts`, `.env.example`; do not touch legacy routes |
+| I1 | `integrate/end-to-end` | Phase B: `lib/job/**`, `lib/check/**`, `lib/tailor/wire.ts`, `lib/job-match/skills.json`, `fixtures/jobs/**`, `tests/{job,check,tailor}/**`. Phase C: `components/{vault,tailor}/**`, `app/{vault,tailor}/**`, `app/page.tsx`, `app/job-match/page.tsx`, `app/api/**` (guards only), `lib/security/**`, `lib/ingest/client.ts`, `README.md`, `AGENTS.md`, `.env.example`, `.gitignore`, `.github/workflows/ci.yml`, `tests/{security,scripts}/**` |
 | Z2 | `z2-housekeeping` | **Overrides** the wizard rule: `app/page.tsx`, `app/legacy/**`, `app/layout.tsx` (metadata only), `AGENTS.md`, `.github/workflows/ci.yml`, `README.md`, `docs/**` |
 
 The lesson table in section 4 still applies to any non-pivot work.

@@ -1,4 +1,4 @@
-import { guardedFetch, type ApiPath } from "@/lib/security/guarded-fetch"
+import { guardedFetch, rateLimitMessage, type ApiPath } from "@/lib/security/guarded-fetch"
 import type { GitHubProfile, GitHubRepo } from "@/lib/types"
 import type { ResumeExtraction } from "@/lib/ingest/resume"
 import { vaultSchema, type Project, type Vault } from "@/lib/schemas/vault"
@@ -23,6 +23,12 @@ async function readError(response: Response, fallback: string): Promise<ImportAp
     if (typeof body.code === "string") code = body.code
   } catch {
     // keep the fallback message
+  }
+  if (code === "too_many_requests") {
+    return new ImportApiError(rateLimitMessage(response) ?? message, 429, code)
+  }
+  if (response.status === 401) {
+    return new ImportApiError("This beta needs an access code. Enter it in the prompt and try again.", 401, code)
   }
   if (code !== "too_many_requests" && (response.status === 429 || /rate limit/i.test(message))) {
     return new ImportApiError(
@@ -62,7 +68,7 @@ export async function loadVault(id: string, signal?: AbortSignal): Promise<Vault
 export async function saveVault(vault: Vault): Promise<void> {
   let response: Response
   try {
-    response = await fetch(`/api/vault/${vault.id}`, {
+    response = await guardedFetch(`/api/vault/${vault.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(vault),
@@ -90,7 +96,7 @@ export async function parseResumePdf(file: File): Promise<string> {
   form.append("file", file)
   let response: Response
   try {
-    response = await fetch("/api/parse-resume", { method: "POST", body: form })
+    response = await guardedFetch("/api/parse-resume", { method: "POST", body: form })
   } catch {
     throw new ImportApiError("Could not reach the server. Check your connection and try again.", 0)
   }
