@@ -1,0 +1,24 @@
+Senior UX Engineer, Design Systems
+
+Northwind Studio builds planning software for architecture firms. Our product team is small, and the UX engineering group sits between design and engineering. You will turn design intent into components that hundreds of screens depend on.
+
+What you'll do
+- Own the component library that our product designers and engineers share every day.
+- Partner with designers in Figma to turn explorations into documented, reusable patterns.
+- Keep interaction details consistent across the product, from focus order to empty states.
+- Review pull requests from product engineers who consume the system.
+
+Requirements
+- Five or more years building production interfaces with React and TypeScript.
+- Deep knowledge of accessibility: WCAG 2.2, ARIA patterns, keyboard support and screen reader testing.
+- Experience maintaining a design system used by several product teams.
+- Comfort with motion design and micro-interactions that respect user motion preferences.
+- Strong CSS skills, including responsive design for dense, data-heavy layouts.
+
+Nice-to-have
+- Storybook for documenting components and visual states.
+- Experience with design tokens shared across platforms.
+- Usability testing with real customers.
+
+Benefits
+- Remote-friendly team across two time zones, learning budget, and four weeks of paid leave.

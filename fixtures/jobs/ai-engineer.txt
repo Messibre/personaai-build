@@ -1,0 +1,23 @@
+AI Engineer, LLM Applications
+
+Ledgerline helps accounting teams close their books faster. We are building AI assistants that read invoices, answer questions about ledgers and explain their reasoning with citations. The AI team is four engineers and one researcher.
+
+What you'll do
+- Design retrieval pipelines that ground every LLM answer in the customer's own documents.
+- Build evaluation suites that catch regressions before a prompt or model change ships.
+- Work with product engineers to expose AI features through clean internal APIs.
+
+Requirements
+- Three or more years writing production Python.
+- Hands-on experience shipping LLM features to real users.
+- Built retrieval augmented generation (RAG) systems with embeddings and a vector database.
+- Experience with model evaluation: test sets, metrics and tracking regressions.
+- Prompt engineering for structured output that a program can validate.
+
+Nice-to-have
+- Familiarity with PyTorch or fine-tuning smaller models.
+- Experience with LangChain or LlamaIndex.
+- TypeScript for internal tools.
+
+Benefits
+- Fully remote within Europe, equity, and a generous hardware budget.

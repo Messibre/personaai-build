@@ -19,7 +19,7 @@ function sentenceLines(text: string): string[] {
   return text.split(/\n|(?<=[.!?])\s+/).map((line) => line.replace(/^[-*]\s*/, "").trim()).filter(Boolean)
 }
 
-function matchesFor(line: string): Skill[] {
+export function matchesFor(line: string): Skill[] {
   const source = line.toLowerCase()
   return skills.filter((skill) => skill.aliases.some((alias) => {
     const value = alias.toLowerCase()
@@ -47,7 +47,7 @@ function roleType(text: string, title: string): { roleType: JobRoleType; margin:
   return { roleType: ordered[0][1] > 0 ? ordered[0][0] as JobRoleType : "other", margin: ordered[0][1] - ordered[1][1] }
 }
 
-function deterministicAnalysis(jobText: string): JobAnalysis {
+export function deterministicAnalysis(jobText: string): JobAnalysis {
   const text = clean(jobText)
   const lines = sentenceLines(text)
   const title = lines[0]?.slice(0, 160) || "Job opportunity"
