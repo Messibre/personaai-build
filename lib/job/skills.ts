@@ -91,10 +91,29 @@ export interface Evidence {
   text: string
 }
 
+/**
+ * A skill's `implies` list names skills it cannot be used without (FastAPI is a Python API framework),
+ * so evidence for it is evidence for them. `related` stays a partial match only.
+ */
+function withImplied(ids: Iterable<string>): Set<string> {
+  const out = new Set<string>()
+  const queue = [...ids]
+  while (queue.length > 0) {
+    const id = queue.pop() as string
+    if (out.has(id)) continue
+    out.add(id)
+    for (const ref of SKILLS_BY_ID.get(id)?.implies ?? []) {
+      const resolved = resolveRef(ref)
+      if (resolved && !out.has(resolved)) queue.push(resolved)
+    }
+  }
+  return out
+}
+
 export function buildEvidence(texts: readonly string[]): Evidence {
-  const skillIds = new Set<string>()
-  for (const text of texts) for (const id of findSkillIds(text)) skillIds.add(id)
-  return { skillIds, text: texts.join("\n") }
+  const found: string[] = []
+  for (const text of texts) found.push(...findSkillIds(text))
+  return { skillIds: withImplied(found), text: texts.join("\n") }
 }
 
 /** Taxonomy requirements match by skill id; any other requirement matches by one of its keywords. */

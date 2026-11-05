@@ -52,6 +52,7 @@ export function ResumeImportCard({ disabled, onImport }: ResumeImportCardProps) 
         experience: result.experience,
         skills: result.skills,
         education: result.education,
+        personName: result.personName,
       })
       const found = result.projects.length + result.experience.length + result.skills.length + result.education.length
       const skipped =

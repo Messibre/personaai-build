@@ -63,7 +63,7 @@ export function ResultsView({ vault, job, output, template, colorScheme, company
           <DownloadButton content={rendered.portfolioHtml} filename={`${fileStem}-portfolio.html`} mimeType="text/html" label="Download HTML" />
           <CopyButton text={rendered.portfolioHtml} label="Copy HTML" />
         </div>
-        <iframe title="Portfolio preview" srcDoc={rendered.portfolioHtml} sandbox="" className="h-[720px] w-full rounded-md border border-border" />
+        <iframe title="Portfolio preview" srcDoc={rendered.portfolioHtml} sandbox="allow-scripts" className="h-[720px] w-full rounded-md border border-border" />
       </TabsContent>
       <TabsContent value="resume">
         <ResumeView html={rendered.resumeHtml} text={rendered.resumeText} fileStem={fileStem} />

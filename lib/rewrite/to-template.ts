@@ -48,7 +48,9 @@ function toProfile(vault: Vault): GitHubProfile {
     username,
     name: vault.person.name,
     bio: null,
-    avatar_url: username ? `https://github.com/${encodeURIComponent(username)}.png?size=460` : "",
+    avatar_url: username
+      ? `https://github.com/${encodeURIComponent(username)}.png?size=460`
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(vault.person.name)}&size=460&background=1f2937&color=e5e7eb&format=png`,
     followers: 0,
     following: 0,
     public_repos: 0,

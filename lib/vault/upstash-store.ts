@@ -60,8 +60,8 @@ export class UpstashVaultStore implements VaultStore {
   private readonly fetchImpl: FetchLike
 
   constructor(
-    url: string | undefined = process.env.UPSTASH_REDIS_REST_URL,
-    token: string | undefined = process.env.UPSTASH_REDIS_REST_TOKEN,
+    url: string | undefined = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL,
+    token: string | undefined = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
     options: UpstashStoreOptions = {},
   ) {
     this.config = parseUpstashConfig(url, token)

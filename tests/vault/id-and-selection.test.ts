@@ -26,6 +26,11 @@ describe("getServerVaultStore", () => {
     expect(getServerVaultStore(env)).toBeInstanceOf(UpstashVaultStore)
   })
 
+  it("accepts the KV_REST_API_* names injected by the Vercel Upstash integration", () => {
+    const env = { KV_REST_API_URL: FAKE_URL, KV_REST_API_TOKEN: FAKE_TOKEN, VERCEL: "1" }
+    expect(getServerVaultStore(env)).toBeInstanceOf(UpstashVaultStore)
+  })
+
   it("uses the file store when not on Vercel and Upstash is not fully configured", () => {
     expect(getServerVaultStore({})).toBeInstanceOf(FileVaultStore)
     expect(getServerVaultStore({ UPSTASH_REDIS_REST_URL: FAKE_URL })).toBeInstanceOf(FileVaultStore)

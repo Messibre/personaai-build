@@ -7,7 +7,7 @@ import { ProjectList } from "@/components/vault/project-list"
 import { ResumeImportCard } from "@/components/vault/resume-import-card"
 import { Spinner } from "@/components/ui/spinner"
 import { ContinueLastVault } from "@/components/vault/continue-last-vault"
-import { rememberVaultId } from "@/components/vault/last-vault"
+import { readLastVaultId, rememberVaultId } from "@/components/vault/last-vault"
 import { VaultActions } from "@/components/vault/vault-actions"
 import { friendlyMessage, loadVault, saveVault } from "@/lib/ingest/client"
 import { DEFAULT_VAULT_NAME, mergeImport, type ImportBundle } from "@/lib/ingest/merge"
@@ -49,7 +49,13 @@ export function ImportPanel() {
 
   const applyImport = useCallback(
     async (bundle: ImportBundle) => {
-      const base = vault ?? { ...createEmptyVault(DEFAULT_VAULT_NAME), ...(idParam ? { id: idParam } : {}) }
+      let current = vault
+      const lastId = !current && !idParam ? readLastVaultId() : null
+      if (lastId) {
+        // Importing before pressing "Continue" must not orphan the saved vault.
+        current = await loadVault(lastId).catch(() => null)
+      }
+      const base = current ?? { ...createEmptyVault(DEFAULT_VAULT_NAME), ...(idParam ? { id: idParam } : {}) }
       const next = mergeImport(base, bundle)
       if (next === base && vault) return
       await saveVault(next)
