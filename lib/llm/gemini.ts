@@ -79,7 +79,7 @@ export class GeminiClient implements LLMClient {
         }
       }
 
-      const timeoutSignal = AbortSignal.timeout(this.timeoutMs)
+      const timeoutSignal = AbortSignal.timeout(Math.max(this.timeoutMs, req.minTimeoutMs ?? 0))
       let requestSignal: AbortSignal = timeoutSignal
 
       if (req.signal) {

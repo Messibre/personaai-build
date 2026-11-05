@@ -161,6 +161,10 @@ export async function generateStage(deps: TailorDeps, input: GenerateInput): Pro
   let droppedByRewrite: number
   try {
     const rewrite = await deps.rewriteForJob(deps.llm, { vault: input.vault, job: input.job, picks: input.picks })
+    if (!rewrite.ok) {
+      const kind = rewrite.error.kind === "llm" ? `llm:${rewrite.error.error.kind}` : rewrite.error.kind
+      console.error(`[tailor] rewrite failed (${kind})`)
+    }
     if (!rewrite.ok) return fail("rewrite_failed", "I could not write the text for this job. Please try again.")
     rewritten = rewrite.draft
     droppedByRewrite = rewrite.dropped
