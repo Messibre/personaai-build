@@ -12,7 +12,7 @@ export interface TailorDeps {
   analyzeJob(llm: LLMClient, postingText: string): Promise<AnalyzeJobResult>
   detectGaps(job: JobProfile, vault: Vault): Gap[]
   pickProjects(job: JobProfile, vault: Vault, opts: { max: number }): ProjectPick[]
-  checkDraft(draft: Draft, vault: Vault, llm?: LLMClient): Promise<CheckResult>
+  checkDraft(draft: Draft, vault: Vault, llm?: LLMClient, options?: { jobTitle?: string }): Promise<CheckResult>
   rewriteForJob(llm: LLMClient, input: RewriteInput): Promise<RewriteResult>
   now(): Date
 }

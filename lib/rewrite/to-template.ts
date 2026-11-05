@@ -1,5 +1,5 @@
 import type { TemplateData } from "@/lib/templates/shared/types"
-import type { AIProject, GitHubProfile, PortfolioConfig, SocialLinks } from "@/lib/types"
+import type { AIProject, GitHubProfile, GitHubRepo, PortfolioConfig, SocialLinks } from "@/lib/types"
 import type { Draft, Sentence } from "@/lib/schemas/draft"
 import type { JobProfile, ProjectPick } from "@/lib/schemas/job"
 import type { Vault } from "@/lib/schemas/vault"
@@ -48,7 +48,7 @@ function toProfile(vault: Vault): GitHubProfile {
     username,
     name: vault.person.name,
     bio: null,
-    avatar_url: "",
+    avatar_url: username ? `https://github.com/${encodeURIComponent(username)}.png?size=460` : "",
     followers: 0,
     following: 0,
     public_repos: 0,
@@ -84,6 +84,34 @@ function toAIProjects(vault: Vault, draft: Draft, picks: ProjectPick[]): AIProje
   return projects
 }
 
+/** Picked projects only, so Skills lists the technologies of the work actually shown. */
+function toRepos(vault: Vault, picks: ProjectPick[]): GitHubRepo[] {
+  const confirmedSkills = vault.skills.filter((skill) => skill.confirmed).map((skill) => skill.name)
+  const projects = picks
+    .map((pick) => vault.projects.find((project) => project.id === pick.projectId))
+    .filter((project): project is Vault["projects"][number] => Boolean(project))
+  const seen = new Set(projects.map((project) => project.primaryLanguage?.toLowerCase()).filter(Boolean))
+  const fresh = (names: string[]) =>
+    names.filter((name) => {
+      const key = name.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  return projects
+    .map((project, index) => ({
+      name: project.name,
+      description: null,
+      language: project.primaryLanguage ?? null,
+      stargazers_count: project.stats?.stars ?? 0,
+      forks_count: project.stats?.forks ?? 0,
+      html_url: project.url ?? "#",
+      fork: false,
+      topics: fresh([...project.techs, ...(index === 0 ? confirmedSkills : [])]),
+      homepage: null,
+    }))
+}
+
 export function buildTemplateData({ vault, draft, picks, config, job }: BuildTemplateDataInput): TemplateData {
   const socialLinks = toSocialLinks(vault.person.links)
   const sections = vault.github ? [...config.sections] : config.sections.filter((section) => section !== "github-stats")
@@ -92,13 +120,13 @@ export function buildTemplateData({ vault, draft, picks, config, job }: BuildTem
 
   return {
     profile: toProfile(vault),
-    repos: [],
+    repos: toRepos(vault, picks),
     resumeText: null,
     aiResume: null,
     notionContent: null,
     config: { ...config, sections, socialLinks },
     photoUrl: null,
-    aiBio: about || null,
+    aiBio: about || tagline || null,
     socialLinks,
     aiProjects: toAIProjects(vault, draft, picks),
     heroTagline: tagline || null,

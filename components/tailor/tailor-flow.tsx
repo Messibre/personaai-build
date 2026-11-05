@@ -49,7 +49,7 @@ export function TailorFlow() {
   const [job, setJob] = useState<JobProfile | null>(null)
   const [gaps, setGaps] = useState<Gap[]>([])
   const [items, setItems] = useState<SelectableProject[]>([])
-  const [template, setTemplate] = useState<TemplateStyle>("minimal-clean")
+  const [template, setTemplate] = useState<TemplateStyle>("bento-grid")
   const [colorScheme, setColorScheme] = useState<ColorScheme>("ocean")
   const [output, setOutput] = useState<GenerateOutput | null>(null)
 
