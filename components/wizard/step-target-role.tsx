@@ -1,5 +1,6 @@
 "use client"
 
+import { guardedFetch, rateLimitMessage } from "@/lib/security/guarded-fetch"
 import { useState, useEffect, useCallback, type Dispatch } from "react"
 import type { WizardState, WizardAction } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -122,7 +123,7 @@ export function StepTargetRole({ state, dispatch, onNext, onBack }: StepTargetRo
     dispatch({ type: "SET_AI_CONTENT_LOADING", loading: true })
 
     try {
-      const res = await fetch("/api/ai-content", {
+      const res = await guardedFetch("/api/ai-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,7 +142,7 @@ export function StepTargetRole({ state, dispatch, onNext, onBack }: StepTargetRo
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(getFriendlyErrorMessage(data.error || `Server error (${res.status})`, "aiContent"))
+        throw new Error(rateLimitMessage(res) || getFriendlyErrorMessage(data.error || `Server error (${res.status})`, "aiContent"))
       }
 
       dispatch({

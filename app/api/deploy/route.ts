@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, whenEnabled, withGuards } from "@/lib/security/guard"
 import { createHash } from "crypto"
 
 const VERCEL_API = "https://api.vercel.com"
@@ -55,7 +56,14 @@ async function waitForReady(deploymentId: string, token: string, maxWaitMs = 900
 
 const MAX_HTML_BYTES = 2 * 1024 * 1024
 
-export async function POST(request: Request) {
+/** Spends VERCEL_TOKEN, so it is hidden unless explicitly enabled. */
+function isLegacyDeployEnabled(): boolean {
+  return process.env.ENABLE_LEGACY_DEPLOY === "true"
+}
+
+export const POST = whenEnabled(isLegacyDeployEnabled, withGuards(handlePost, { route: "deploy", max: 2, windowMs: ONE_MINUTE_MS }))
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const token = process.env.VERCEL_TOKEN
     if (!token) {

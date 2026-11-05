@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { ContinueLastVault } from "@/components/vault/continue-last-vault"
 import { friendlyMessage, loadVault, saveVault } from "@/lib/ingest/client"
 import type { JobProfile } from "@/lib/schemas/job"
 import type { Gap } from "@/lib/schemas/tailor"
@@ -48,7 +49,7 @@ export function TailorFlow() {
   const [job, setJob] = useState<JobProfile | null>(null)
   const [gaps, setGaps] = useState<Gap[]>([])
   const [items, setItems] = useState<SelectableProject[]>([])
-  const [template, setTemplate] = useState<TemplateStyle>("minimal-clean")
+  const [template, setTemplate] = useState<TemplateStyle>("bento-grid")
   const [colorScheme, setColorScheme] = useState<ColorScheme>("ocean")
   const [output, setOutput] = useState<GenerateOutput | null>(null)
 
@@ -138,9 +139,12 @@ export function TailorFlow() {
 
   if (!vaultId) {
     return (
-      <Notice title="No vault selected">
-        Open this page from your vault, or <Link className="underline" href="/vault">import your projects first</Link>.
-      </Notice>
+      <div className="flex flex-col gap-4">
+        <ContinueLastVault basePath="/tailor" />
+        <Notice title="No vault selected">
+          Open this page from your vault, or <Link className="underline" href="/vault">import your projects first</Link>.
+        </Notice>
+      </div>
     )
   }
   if (loading) {

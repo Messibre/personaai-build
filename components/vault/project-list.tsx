@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { FactReview } from "@/components/vault/fact-review"
 import { QuestionsPanel } from "@/components/vault/questions-panel"
 import { countFacts, countVaultFacts } from "@/lib/ingest/summary"
 import type { Vault } from "@/lib/schemas/vault"
@@ -76,6 +77,7 @@ export function ProjectList({
                       ) : null}
                     </CardContent>
                   ) : null}
+                  {onChangeVault ? <FactReview project={project} onChangeVault={onChangeVault} /> : null}
                   {onChangeVault ? <QuestionsPanel project={project} onChangeVault={onChangeVault} /> : null}
                 </Card>
               </li>

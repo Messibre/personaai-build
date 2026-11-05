@@ -1,0 +1,25 @@
+Frontend Engineer, Web Platform
+
+Harbor Freight Labs ships a web app that logistics teams use to track container shipments in real time. The frontend team owns the web client end to end, from the routing layer to the last pixel of a chart tooltip.
+
+What you'll do
+- Build new frontend features in React and Next.js with the product team.
+- Improve web performance on slow networks and older laptops.
+- Write tests for the frontend so we can deploy several times a day with confidence.
+- Help shape how the web client is structured as the codebase grows.
+
+Requirements
+- Three or more years of professional frontend work with React.
+- Strong TypeScript and modern JavaScript.
+- Solid CSS, including Tailwind or a similar utility approach, and responsive layouts.
+- Experience with Next.js routing and server rendering.
+- Hands-on web performance work: profiling, bundle size and rendering cost.
+- Writing unit tests with Jest or Vitest.
+
+Nice-to-have
+- End-to-end tests with Playwright.
+- GraphQL on the client side.
+- Experience deploying on Vercel.
+
+Benefits
+- Hybrid office in Rotterdam, yearly conference budget, and a modern laptop of your choice.

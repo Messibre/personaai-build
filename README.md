@@ -21,6 +21,20 @@ PersonaAI is a job-tailoring tool. You store your real work once as confirmed fa
 
 Contributor rules live in [AGENTS.md](./AGENTS.md).
 
+## The three surfaces
+
+| Surface | Path | What it is | Status |
+|---------|------|------------|--------|
+| Work vault and tailoring | `/vault`, `/tailor` | The product: confirmed facts in, tailored portfolio, resume and note out | Active |
+| Quick fit check | `/job-match` | Paste a GitHub username and a job; get a rules-based fit report and an optional cover letter. No vault needed. Links to the vault for full tailoring | Active, secondary |
+| Legacy generator | `/legacy` | Original generic portfolio builder | Frozen, hidden from search |
+
+## Known limitations
+
+- **Quick fit check reports live in server memory.** On serverless they can disappear between requests or after a cold start; re-run the check if a report link stops working.
+- **Vault ids are access secrets.** Anyone with a `/vault?id=...` link can read and change that vault. There are no accounts yet.
+- **The legacy generator invents content.** It writes bios and project descriptions without fact checking. It is hidden from search and is not part of the tailoring flow.
+
 ## Legacy generator
 
 The original generic portfolio builder is still available at `/legacy` (hidden from search engines). It is frozen and is not part of the job-tailoring flow.
@@ -94,33 +108,22 @@ Choose from professionally designed, fully responsive templates:
 
 ### Environment Variables
 
-Create a `.env.local` file with:
+Copy `.env.example` to `.env.local` and fill in what you need. Every variable:
 
-```env
-# Required for AI generation
-GEMINI_API_KEY_1=your_gemini_api_key
-GEMINI_API_KEY_2=your_backup_gemini_api_key  # Optional, for failover
-
-# Required for the legacy one-click deploy feature
-VERCEL_TOKEN=your_vercel_token
-
-# Optional (see .env.example)
-LLM_PROVIDER=gemini        # "gemini" or "mock" (offline fixtures, no API calls)
-GEMINI_MODEL=gemini-2.5-flash
-LLM_TIMEOUT_MS=10000
-VAULT_DATA_DIR=data/vaults # local dev only; /api/vault file storage is disabled on Vercel
-GITHUB_TOKEN=              # raises the GitHub import limit from 60 to 5,000 requests/hour
-```
-
-| Variable | Purpose |
-|----------|---------|
-| `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2` | Gemini keys; the second is used for failover |
-| `LLM_PROVIDER` | `gemini` for real calls, `mock` for deterministic offline responses |
-| `GEMINI_MODEL` | Gemini model name (default `gemini-2.5-flash`) |
-| `LLM_TIMEOUT_MS` | Per-call timeout for model requests |
-| `VAULT_DATA_DIR` | Folder where the local file-backed vault store writes JSON (local dev only) |
-| `GITHUB_TOKEN` | Optional token sent as a Bearer header for repository imports |
-| `VERCEL_TOKEN` | Used only by the legacy one-click deploy |
+| Variable | Used by | Purpose |
+|----------|---------|---------|
+| `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2` | all AI routes | Gemini keys; the second is used for failover |
+| `LLM_PROVIDER` | vault, tailor | `gemini` for real calls, `mock` for deterministic offline responses |
+| `GEMINI_MODEL` | vault, tailor | Gemini model name (default `gemini-2.5-flash`) |
+| `LLM_TIMEOUT_MS` | vault, tailor | Per-call model timeout (default `30000`; lower values cause false "unavailable" results) |
+| `AI_ENHANCE` | Quick fit check | `true` lets Gemini refine the rules-based report |
+| `VAULT_DATA_DIR` | vault | Folder for the local file-backed vault store (local dev only) |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | vault | Persistent vault storage on Vercel; without both, `/api/vault` returns 501 there |
+| `GITHUB_TOKEN` | Quick fit check, vault | **Required** for `/job-match` (GitHub GraphQL); optional for vault imports (raises the limit from 60 to 5,000 requests/hour) |
+| `BETA_ACCESS_CODE` | all AI routes | Closed-beta code sent as `x-beta-code`; unset keeps routes open |
+| `ADMIN_TOKEN` | `/admin` | Bearer token for the metrics page; unset keeps it closed |
+| `ENABLE_LEGACY_DEPLOY` | legacy | `/api/deploy` returns 404 unless this is `true` |
+| `VERCEL_TOKEN`, `VERCEL_TEAM_ID` | legacy | Used only by the legacy one-click deploy |
 
 Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 Get your Vercel token from [Vercel Account Settings](https://vercel.com/account/tokens).

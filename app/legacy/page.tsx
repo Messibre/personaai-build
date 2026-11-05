@@ -1,6 +1,7 @@
 "use client"
 
 import { WizardShell } from "@/components/wizard/wizard-shell"
+import { AccessCodePrompt } from "@/components/security/access-code-prompt"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Sparkles, Menu, X } from "lucide-react"
 import Image from "next/image"
@@ -132,6 +133,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background">
+      <AccessCodePrompt />
       {/* Hero Section */}
       <header className="relative overflow-hidden">
         {/* Background grid */}

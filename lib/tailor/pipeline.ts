@@ -171,7 +171,7 @@ export async function generateStage(deps: TailorDeps, input: GenerateInput): Pro
   // Fail closed: no checker result means nothing is shown, and the unchecked draft is never used.
   let checked: ReturnType<typeof checkResultSchema.safeParse>
   try {
-    checked = checkResultSchema.safeParse(await deps.checkDraft(rewritten, input.vault, deps.llm))
+    checked = checkResultSchema.safeParse(await deps.checkDraft(rewritten, input.vault, deps.llm, { jobTitle: input.job.title }))
   } catch {
     return fail("check_failed", "The fact checker could not run, so nothing was produced. Please try again.")
   }

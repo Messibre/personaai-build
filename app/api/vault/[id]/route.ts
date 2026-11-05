@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { ONE_MINUTE_MS, withRateLimit } from "@/lib/security/guard"
 import { vaultSchema } from "@/lib/schemas/vault"
 import { NO_PERSISTENT_STORE_MESSAGE, getServerVaultStore } from "@/lib/vault/index"
 import { VaultStoreError, isValidVaultId, type VaultStore } from "@/lib/vault/store"
@@ -63,7 +64,9 @@ export async function GET(_request: Request, context: RouteContext): Promise<Res
   }
 }
 
-export async function PUT(request: Request, context: RouteContext): Promise<Response> {
+export const PUT = withRateLimit(handlePut, { route: "vault/put", max: 30, windowMs: ONE_MINUTE_MS })
+
+async function handlePut(request: Request, context: RouteContext): Promise<Response> {
   const store = resolveStore()
   if (store instanceof Response) return store
   const id = await resolveId(context)
@@ -105,7 +108,9 @@ export async function PUT(request: Request, context: RouteContext): Promise<Resp
   }
 }
 
-export async function DELETE(_request: Request, context: RouteContext): Promise<Response> {
+export const DELETE = withRateLimit(handleDelete, { route: "vault/delete", max: 30, windowMs: ONE_MINUTE_MS })
+
+async function handleDelete(_request: Request, context: RouteContext): Promise<Response> {
   const store = resolveStore()
   if (store instanceof Response) return store
   const id = await resolveId(context)

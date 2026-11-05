@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import { NextResponse } from "next/server"
 import { analyzeJob } from "@/lib/job-match/analyzer"
 import { fetchJobPosting } from "@/lib/job-match/fetch-job"
@@ -12,7 +13,9 @@ import { explainCompatibility } from "@/lib/job-match/ai/explanation"
 export const runtime = "nodejs"
 export const maxDuration = 30
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "job-match", max: 5, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const parsed = jobMatchInputSchema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ ok: false, error: { code: "INVALID_INPUT", message: parsed.error.issues[0]?.message || "Invalid input" } }, { status: 400 })

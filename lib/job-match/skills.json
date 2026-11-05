@@ -66,5 +66,16 @@
   {"id":"database","name":"Databases","category":"databases","aliases":["database","databases","data storage"],"packages":[],"implies":[],"related":["sql","postgresql"]},
   {"id":"cloud","name":"Cloud","category":"cloud","aliases":["cloud","cloud computing"],"packages":[],"implies":[],"related":["aws","azure"]},
   {"id":"deployment","name":"Deployment","category":"devops","aliases":["deployment","deploying","release"],"packages":[],"implies":[],"related":["ci-cd","docker"]},
-  {"id":"research","name":"User Research","category":"ux","aliases":["user research","usability research","research"],"packages":[],"implies":[],"related":["ux","figma"]}
+  {"id":"research","name":"User Research","category":"ux","aliases":["user research","usability research","research"],"packages":[],"implies":[],"related":["ux","figma"]},
+  {"id":"usability-testing","name":"Usability Testing","category":"ux","aliases":["usability testing","user testing","usability"],"packages":[],"implies":[],"related":["research","ux"]},
+  {"id":"prototyping","name":"Prototyping","category":"ux","aliases":["prototyping","wireframing","wireframes","interactive prototypes"],"packages":[],"implies":[],"related":["figma","ux"]},
+  {"id":"interaction-design","name":"Interaction Design","category":"ux","aliases":["interaction design","information architecture","journey mapping"],"packages":[],"implies":[],"related":["ux","motion"]},
+  {"id":"design-tokens","name":"Design Tokens","category":"ux","aliases":["design tokens","design token"],"packages":[],"implies":[],"related":["design-systems","css"]},
+  {"id":"responsive-design","name":"Responsive Design","category":"frontend","aliases":["responsive design","responsive layouts"],"packages":[],"implies":[],"related":["css","html"]},
+  {"id":"vector-databases","name":"Vector Databases","category":"ai-ml","aliases":["vector databases","vector database","vector store","pgvector","pinecone"],"packages":["pgvector","@pinecone-database/pinecone"],"implies":[],"related":["embeddings","rag"]},
+  {"id":"langchain","name":"LangChain","category":"ai-ml","aliases":["langchain","llamaindex"],"packages":["langchain","llamaindex"],"implies":["llm"],"related":["rag","llm"]},
+  {"id":"fine-tuning","name":"Fine-tuning","category":"ai-ml","aliases":["fine-tuning","fine tuning","fine-tuned"],"packages":[],"implies":["machine-learning"],"related":["llm","evaluation"]},
+  {"id":"nlp","name":"Natural Language Processing","category":"ai-ml","aliases":["nlp","natural language processing"],"packages":[],"implies":["machine-learning"],"related":["llm","embeddings"]},
+  {"id":"ai-agents","name":"AI Agents","category":"ai-ml","aliases":["ai agents","agentic","tool calling","function calling"],"packages":[],"implies":["llm"],"related":["llm","prompt-engineering"]},
+  {"id":"guardrails","name":"AI Guardrails","category":"ai-ml","aliases":["guardrails","guardrail"],"packages":[],"implies":[],"related":["evaluation","llm"]}
 ]

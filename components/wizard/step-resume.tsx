@@ -1,5 +1,6 @@
 "use client"
 
+import { guardedFetch, rateLimitMessage } from "@/lib/security/guarded-fetch"
 import { useCallback, useRef, useState, type Dispatch } from "react"
 import type { WizardState, WizardAction } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -39,7 +40,7 @@ export function StepResume({ state, dispatch, onNext, onBack }: StepResumeProps)
         const formData = new FormData()
         formData.append("file", file)
 
-        const res = await fetch("/api/parse-resume", {
+        const res = await guardedFetch("/api/parse-resume", {
           method: "POST",
           body: formData,
         })
@@ -47,7 +48,7 @@ export function StepResume({ state, dispatch, onNext, onBack }: StepResumeProps)
         const data = await res.json()
 
         if (!res.ok) {
-          dispatch({ type: "SET_RESUME_ERROR", error: getFriendlyServerStatusMessage(res.status, "resume") || getFriendlyErrorMessage(data.error, "resume") })
+          dispatch({ type: "SET_RESUME_ERROR", error: rateLimitMessage(res) || getFriendlyServerStatusMessage(res.status, "resume") || getFriendlyErrorMessage(data.error, "resume") })
           return
         }
 

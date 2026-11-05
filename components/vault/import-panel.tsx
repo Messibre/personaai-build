@@ -6,6 +6,9 @@ import { GitHubImportCard } from "@/components/vault/github-import-card"
 import { ProjectList } from "@/components/vault/project-list"
 import { ResumeImportCard } from "@/components/vault/resume-import-card"
 import { Spinner } from "@/components/ui/spinner"
+import { ContinueLastVault } from "@/components/vault/continue-last-vault"
+import { rememberVaultId } from "@/components/vault/last-vault"
+import { VaultActions } from "@/components/vault/vault-actions"
 import { friendlyMessage, loadVault, saveVault } from "@/lib/ingest/client"
 import { DEFAULT_VAULT_NAME, mergeImport, type ImportBundle } from "@/lib/ingest/merge"
 import type { Vault } from "@/lib/schemas/vault"
@@ -70,6 +73,10 @@ export function ImportPanel() {
     setVault(next)
   }, [])
 
+  useEffect(() => {
+    if (vault) rememberVaultId(vault.id)
+  }, [vault])
+
   const blocked = loading || loadError !== null
 
   return (
@@ -85,11 +92,14 @@ export function ImportPanel() {
         </p>
       ) : null}
 
+      {!idParam && !vault ? <ContinueLastVault basePath="/vault" /> : null}
+
       <div className="grid gap-6 md:grid-cols-2">
         <GitHubImportCard disabled={blocked} onImport={applyImport} />
         <ResumeImportCard disabled={blocked} onImport={applyImport} />
       </div>
 
+      {vault ? <VaultActions vault={vault} /> : null}
       {vault ? <ProjectList vault={vault} onChangeVault={commitVault} /> : null}
     </div>
   )

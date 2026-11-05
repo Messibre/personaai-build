@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest"
 import { analyzeStage, generateStage, validatePicks, POSTING_LIMITS } from "@/lib/tailor/pipeline"
-import * as stubs from "@/lib/tailor/stubs"
-import { CANVAS_FLOW, MOTION_TOKENS } from "../rewrite/helpers"
+import { checkDraft as realCheckDraft } from "@/lib/check/check-draft"
+import { analyzeJob as realAnalyzeJob } from "@/lib/job/analyze"
+import { detectGaps as realDetectGaps } from "@/lib/job/gaps"
+import { pickProjects as realPickProjects } from "@/lib/job/pick"
+import { CANVAS_FLOW, clientReturning, MOTION_TOKENS } from "../rewrite/helpers"
 import { stripScriptsAndStyles } from "../templates/helpers"
 import { draftFollowingLeads, loadAlexVault, loadResumeOnlyVault, makeDeps, POSTING, unconfirmed, uxJob, uxPicks } from "./helpers"
 
 const style = { template: "minimal-clean", colorScheme: "ocean" } as const
+const INTERNAL = "internal stack detail 7f3a"
 
 describe("analyzeStage", () => {
   it("rejects a posting that is too short or too long", async () => {
@@ -42,11 +46,23 @@ describe("analyzeStage", () => {
     expect(result.ok && result.data.picks.map((pick) => pick.projectId)).toEqual([MOTION_TOKENS, CANVAS_FLOW])
   })
 
-  it("never reports success while the G modules are stubs", async () => {
-    const deps = makeDeps({ analyzeJob: stubs.analyzeJob, detectGaps: stubs.detectGaps, pickProjects: stubs.pickProjects })
+  it("never reports success when a G module throws, and does not leak the error", async () => {
+    const boom = () => {
+      throw new Error(INTERNAL)
+    }
+    const deps = makeDeps({ analyzeJob: async () => boom(), detectGaps: boom, pickProjects: boom })
     const result = await analyzeStage(deps, { vault: loadAlexVault(), postingText: POSTING })
     expect(result).toMatchObject({ ok: false, error: { code: "unavailable" } })
-    expect(JSON.stringify(result)).not.toContain(stubs.G_MODULE_NOT_MERGED)
+    expect(JSON.stringify(result)).not.toContain(INTERNAL)
+  })
+
+  it("runs end to end with the real G modules", async () => {
+    const deps = makeDeps({ analyzeJob: realAnalyzeJob, detectGaps: realDetectGaps, pickProjects: realPickProjects })
+    const result = await analyzeStage(deps, { vault: loadAlexVault(), postingText: POSTING })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.data.job.requirements.length).toBeGreaterThanOrEqual(2)
+    expect(result.data.picks.length).toBeGreaterThan(0)
   })
 
   it("maps an analyzer failure to a friendly error", async () => {
@@ -132,9 +148,31 @@ describe("generateStage", () => {
     expect(called).toBe(false)
   })
 
-  it("never runs the stubbed checker to success", async () => {
-    const result = await generateStage(makeDeps({ checkDraft: stubs.checkDraft }), { vault: loadAlexVault(), job: uxJob, picks: uxPicks, ...style })
+  it("never runs a throwing checker to success, and does not leak the error", async () => {
+    const result = await generateStage(makeDeps({ checkDraft: async () => { throw new Error(INTERNAL) } }), { vault: loadAlexVault(), job: uxJob, picks: uxPicks, ...style })
     expect(result).toMatchObject({ ok: false, error: { code: "check_failed" } })
-    expect(JSON.stringify(result)).not.toContain(stubs.G_MODULE_NOT_MERGED)
+    expect(JSON.stringify(result)).not.toContain(INTERNAL)
+  })
+
+  it("the real checker removes a number the cited fact does not support, before any output", async () => {
+    const lie = "Rendering 25,000+ DOM nodes as SVG had become a bottleneck"
+    const draft = {
+      tagline: "",
+      about: [],
+      projects: [
+        { projectId: CANVAS_FLOW, sentences: [{ text: lie, factIds: ["fact_cf-hard"] }, { text: "Built with WebGL and React", factIds: ["fact_cf-tech"] }] },
+        { projectId: MOTION_TOKENS, sentences: [{ text: "Enforces prefers-reduced-motion: reduce across all animated primitives", factIds: ["fact_mt-reduced-motion"] }] },
+      ],
+      resumeBullets: [{ text: lie, factIds: ["fact_cf-hard"] }],
+      note: [],
+    }
+    const deps = makeDeps({ llm: clientReturning(draft), checkDraft: (d, v) => realCheckDraft(d, v) })
+    const result = await generateStage(deps, { vault: loadAlexVault(), job: uxJob, picks: uxPicks, ...style })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.data.removed.filter((r) => r.reason === "number_mismatch")).toHaveLength(2)
+    for (const output of [result.data.portfolioHtml, result.data.resumeHtml, result.data.resumeText, result.data.noteText]) {
+      expect(output).not.toContain("25,000")
+    }
   })
 })

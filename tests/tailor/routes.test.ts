@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest"
 import { POST as analyze } from "@/app/api/tailor/analyze/route"
 import { POST as generate } from "@/app/api/tailor/generate/route"
 import { MAX_BODY_BYTES } from "@/lib/tailor/requests"
-import { G_MODULE_NOT_MERGED } from "@/lib/tailor/stubs"
 import { loadAlexVault, POSTING, uxJob, uxPicks } from "./helpers"
 
 function post(handler: (request: Request) => Promise<Response>, body: string) {
@@ -27,10 +26,14 @@ describe("/api/tailor/analyze", () => {
     expect((await response.json()).code).toBe("too_short")
   })
 
-  it("answers 503 without leaking internals while G modules are stubs", async () => {
+  it("answers 200 with a job, gaps and picks from the real G modules", async () => {
     const response = await post(analyze, JSON.stringify({ vault: loadAlexVault(), postingText: POSTING }))
-    expect(response.status).toBe(503)
-    expect(await response.text()).not.toContain(G_MODULE_NOT_MERGED)
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.job.requirements.length).toBeGreaterThanOrEqual(2)
+    expect(Array.isArray(body.gaps)).toBe(true)
+    expect(body.picks.length).toBeGreaterThan(0)
+    expect(JSON.stringify(body)).not.toMatch(/not merged|stack|Error:/i)
   })
 })
 

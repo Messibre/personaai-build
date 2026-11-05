@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
+import { AccessCodePrompt } from "@/components/security/access-code-prompt"
+import { guardedFetch, rateLimitMessage } from "@/lib/security/guarded-fetch"
+
+function guardErrorMessage(response: Response): string | null {
+  if (response.status === 401) return "This beta needs an access code. Enter it in the prompt and try again."
+  return rateLimitMessage(response)
+}
 
 type Result = {
   analysis: { roleTitle: string; roleType: string }
@@ -43,7 +50,7 @@ export default function JobMatchPage() {
 
       let response: Response
       try {
-        response = await fetch("/api/job-match", {
+        response = await guardedFetch("/api/job-match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobText: jobText || undefined, jobUrl: jobUrl || undefined, githubUsername, resumeText: resumeText || undefined, refresh: forceRefresh }),
@@ -52,6 +59,8 @@ export default function JobMatchPage() {
         if (err instanceof TypeError) throw new Error("Couldn't reach the server, try again.", { cause: err })
         throw err
       }
+      const guardMessage = guardErrorMessage(response)
+      if (guardMessage) throw new Error(guardMessage)
       const contentType = response.headers.get("content-type") || ""
       if (!contentType.includes("application/json")) {
         console.error("Unexpected Job Match response", response.status)
@@ -77,11 +86,13 @@ export default function JobMatchPage() {
     setLetterLoading(true)
     setError("")
     try {
-      const response = await fetch("/api/job-match/cover-letter", {
+      const response = await guardedFetch("/api/job-match/cover-letter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ analysisId: result.analysisId, options: { tone: "warm", length: "standard", addressGaps: false } }),
       })
+      const guardMessage = guardErrorMessage(response)
+      if (guardMessage) throw new Error(guardMessage)
       const data = await response.json() as { ok?: boolean; text?: string; error?: { message?: string } }
       if (!response.ok || !data.ok || !data.text) throw new Error(data.error?.message || "Could not generate the cover letter.")
       setCoverLetter(data.text)
@@ -94,6 +105,7 @@ export default function JobMatchPage() {
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 sm:px-8">
+      <AccessCodePrompt />
       <div className="mx-auto max-w-5xl">
         <Link href="/" className="mb-10 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Back to PersonaAI</Link>
         <div className="mb-8 flex items-start gap-4">
@@ -125,6 +137,7 @@ export default function JobMatchPage() {
           <section><h2 className="mb-3 text-xl font-semibold">Best-fit projects</h2><div className="grid gap-4 md:grid-cols-2">{result.selectedProjects.length ? result.selectedProjects.map((item) => <Card key={item.project.name}><CardHeader><CardTitle>{item.project.url ? <a href={item.project.url} target="_blank" rel="noreferrer" className="hover:underline">{item.project.name}</a> : item.project.name}</CardTitle><CardDescription>Covers: {item.covers.join(", ")}</CardDescription></CardHeader><CardContent><p className="text-sm">{item.project.description || "Public GitHub repository"}</p><p className="mt-2 text-xs text-muted-foreground">{[item.project.language, item.project.stars !== undefined ? `${item.project.stars} stars` : "", ...(item.project.topics || []).slice(0, 5)].filter(Boolean).join(" · ")}</p><p className="mt-3 text-sm">{item.reason}</p><ul className="mt-3 space-y-2 text-xs text-muted-foreground">{item.evidence.map((evidence, evidenceIndex) => <li key={`${evidence}-${evidenceIndex}`} className="rounded-md bg-muted/40 px-3 py-2">{evidence}</li>)}</ul></CardContent></Card>) : <Card><CardContent className="pt-6 text-sm text-muted-foreground">No projects matched directly. Add a GitHub username or resume text to compare your evidence.</CardContent></Card>}</div></section>
           <section><h2 className="mb-3 text-xl font-semibold">Requirement checklist</h2><div className="space-y-3">{result.requirementChecks.map((check) => { const Icon = statusIcon[check.status]; return <Card key={`${check.requirement.tier}-${check.requirement.label}`}><CardContent className="flex gap-3 pt-6"><Icon className={`mt-0.5 size-5 shrink-0 ${check.status === "covered" ? "text-emerald-500" : check.status === "partial" ? "text-amber-500" : "text-muted-foreground"}`} /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="font-medium">{check.requirement.label}</p><span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{check.requirement.tier}</span><span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{check.status}</span></div><p className="mt-1 text-sm text-muted-foreground">{check.explanation}</p>{check.evidence.length > 0 && <ul className="mt-3 space-y-2 text-xs text-muted-foreground">{check.evidence.slice(0, 4).map((evidence, evidenceIndex) => <li key={`${evidence}-${evidenceIndex}`} className="rounded-md bg-muted/40 px-3 py-2">{evidence}</li>)}</ul>}</div></CardContent></Card> })}</div></section>
           <Card><CardHeader><CardTitle>Cover letter</CardTitle><CardDescription>Generated only from the verified GitHub and resume evidence in this analysis.</CardDescription></CardHeader><CardContent className="space-y-3"><Button onClick={generateCoverLetter} disabled={letterLoading}>{letterLoading ? "Generating..." : "Generate cover letter"}</Button>{coverLetter && <><Textarea value={coverLetter} onChange={(event) => setCoverLetter(event.target.value)} className="min-h-72" /><p className="text-xs text-muted-foreground">Review before sending. Only verified evidence was used.</p></>}</CardContent></Card>
+          <Card><CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-pretty">Want a tailored portfolio, resume and note for this job? Put your work in your vault.</p><Button asChild variant="outline"><Link href="/vault">Go to your vault</Link></Button></CardContent></Card>
         </div>}
       </div>
     </main>

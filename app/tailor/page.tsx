@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
 import { AccessCodePrompt } from "@/components/security/access-code-prompt"
+import { BackToVault } from "@/components/tailor/back-to-vault"
 import { TailorFlow } from "@/components/tailor/tailor-flow"
 
 export const metadata: Metadata = {
@@ -12,6 +13,9 @@ export default function TailorPage() {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10">
       <header className="flex flex-col gap-2">
+        <Suspense fallback={null}>
+          <BackToVault />
+        </Suspense>
         <h1 className="text-balance text-3xl font-semibold text-foreground">Tailor to a job</h1>
         <p className="max-w-2xl text-pretty text-muted-foreground">
           Every sentence is checked against your confirmed facts. Anything that is not backed up is removed and shown to you.

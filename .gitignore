@@ -17,3 +17,7 @@ node_modules
 .vercel
 # Local vault files written by FileVaultStore
 /data/
+data/
+
+# TypeScript incremental build info
+tsconfig.tsbuildinfo

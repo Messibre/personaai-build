@@ -1,3 +1,4 @@
+import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { getLedger } from "@/lib/job-match/report/store"
@@ -13,7 +14,9 @@ const schema = z.object({
   }),
 })
 
-export async function POST(request: Request) {
+export const POST = withGuards(handlePost, { route: "job-match/cover-letter", max: 10, windowMs: ONE_MINUTE_MS })
+
+async function handlePost(request: Request): Promise<Response> {
   try {
     const parsed = schema.safeParse(await request.json())
     if (!parsed.success) return NextResponse.json({ ok: false, error: { code: "INVALID_INPUT", message: "Invalid cover letter options." } }, { status: 400 })
