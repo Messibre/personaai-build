@@ -111,3 +111,22 @@ describe("detectGaps", () => {
     expect(detectGaps(job, alex())).toEqual(detectGaps(job, alex()))
   })
 })
+
+describe("implied skills", () => {
+  it("treats FastAPI and a prediction model as evidence for Python, APIs and Machine Learning", () => {
+    const vault = alex()
+    vault.projects[0].facts.push(
+      { id: "fact_fastapi", text: "Connected the model to a React frontend through a FastAPI backend", kind: "built", source: "user", confirmed: true },
+      { id: "fact_model", text: "Trained a prediction model on two years of booking data", kind: "built", source: "user", confirmed: true },
+    )
+    const job = jobOf([req("python", "Python", "must"), req("api", "APIs", "must"), req("machine-learning", "Machine Learning", "must")])
+    expect(detectGaps(job, vault)).toEqual([])
+  })
+
+  it("does not count an unconfirmed FastAPI fact", () => {
+    const vault = alex()
+    vault.projects[0].facts.push({ id: "fact_fastapi", text: "Built a FastAPI backend", kind: "built", source: "user", confirmed: false })
+    const gaps = detectGaps(jobOf([req("python", "Python", "must")]), vault)
+    expect(gaps.map((gap) => gap.label)).toEqual(["Python"])
+  })
+})

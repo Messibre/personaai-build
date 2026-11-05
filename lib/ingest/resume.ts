@@ -32,6 +32,7 @@ const extractedFactSchema = z.object({
 })
 
 const extractionSchema = z.object({
+  name: z.string().optional().default(""),
   experience: z.array(
     z.object({
       company: z.string(),
@@ -69,6 +70,8 @@ export interface ResumeExtraction {
   projects: Project[]
   skills: Skill[]
   education: Education[]
+  /** The person's name, kept only when it appears verbatim in the resume. */
+  personName?: string
   /** Items or facts discarded because their evidence is not in the resume or they failed validation. */
   dropped: number
 }
@@ -94,7 +97,7 @@ const SYSTEM_PROMPT = [
 function buildPrompt(text: string, nonce: string): string {
   return [
     "Extract the resume below into this JSON shape:",
-    '{"experience":[{"company":"","title":"","start":"","end":"","evidence":"","facts":[{"text":"","kind":"role|built|outcome|metric|tech","evidence":""}]}],',
+    '{"name":"the person\'s full name exactly as written, or empty","experience":[{"company":"","title":"","start":"","end":"","evidence":"","facts":[{"text":"","kind":"role|built|outcome|metric|tech","evidence":""}]}],',
     '"projects":[{"name":"","techs":[""],"evidence":"","facts":[{"text":"","kind":"built|outcome|metric|tech","evidence":""}]}],',
     '"skills":[{"name":"","evidence":""}],',
     '"education":[{"institution":"","degree":"","start":"","end":"","evidence":""}]}',
@@ -236,5 +239,8 @@ export function verifyExtraction(raw: RawExtraction, resumeText: string): Resume
     else dropped += 1
   }
 
-  return { experience, projects, skills, education, dropped }
+  const name = (raw.name ?? "").trim().slice(0, 200)
+  const personName = name.length >= 2 && hasEvidence(name, 2) ? name : undefined
+
+  return { experience, projects, skills, education, dropped, ...(personName ? { personName } : {}) }
 }
