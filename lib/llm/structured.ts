@@ -6,6 +6,7 @@ export interface StructuredRequest<T> {
   prompt: string
   schema: z.ZodType<T, z.ZodTypeDef, unknown>
   maxOutputTokens: number
+  minTimeoutMs?: number
 }
 
 export type StructuredError =
@@ -77,12 +78,13 @@ export async function generateStructured<T>(
   client: LLMClient,
   request: StructuredRequest<T>,
 ): Promise<StructuredResult<T>> {
-  const { system, prompt, schema, maxOutputTokens } = request
+  const { system, prompt, schema, maxOutputTokens, minTimeoutMs } = request
 
   const first = await client.generate({
     system,
     prompt,
     maxOutputTokens,
+    minTimeoutMs,
     responseMimeType: "application/json",
   })
   if (!first.ok) return { ok: false, error: { kind: "llm", error: first.error } }
@@ -94,6 +96,7 @@ export async function generateStructured<T>(
     system,
     prompt: buildRepairPrompt(prompt, first.text, firstAttempt.message),
     maxOutputTokens,
+    minTimeoutMs,
     responseMimeType: "application/json",
   })
   if (!repair.ok) return { ok: false, error: { kind: "llm", error: repair.error } }

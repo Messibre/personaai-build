@@ -4,6 +4,8 @@ export interface LLMGenerateRequest {
   maxOutputTokens: number
   signal?: AbortSignal
   responseMimeType?: string
+  /** Lower bound for this call's timeout; the client never waits less than its configured timeout. */
+  minTimeoutMs?: number
 }
 
 export type LLMResult =
