@@ -10,7 +10,7 @@ export interface GeminiClientConfig {
 }
 
 const DEFAULT_MODEL = "gemini-2.5-flash"
-const DEFAULT_TIMEOUT_MS = 30_000
+const DEFAULT_TIMEOUT_MS = 60_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_BACKOFF_MS = 300
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"

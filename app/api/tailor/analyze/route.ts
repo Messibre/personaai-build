@@ -6,7 +6,7 @@ import { getTailorDeps } from "@/lib/tailor/wire"
 import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 
 export const runtime = "nodejs"
-export const maxDuration = 60
+export const maxDuration = 120
 
 async function handle(request: Request): Promise<Response> {
   const body = await readValidatedBody(request, analyzeRequestSchema)

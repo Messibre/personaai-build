@@ -21,7 +21,7 @@ export const MAX_RESUME_CHARS = 30_000
 const MIN_FACT_EVIDENCE_CHARS = 12
 const MIN_ITEM_EVIDENCE_CHARS = 2
 const MAX_FACT_TEXT = 500
-const MAX_OUTPUT_TOKENS = 8192
+const MAX_OUTPUT_TOKENS = 16_384
 
 const evidenceSchema = z.string()
 
@@ -143,6 +143,7 @@ export async function extractResume(llm: LLMClient, text: string): Promise<Resum
     prompt: buildPrompt(text, nonce),
     schema: extractionSchema,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
+    minTimeoutMs: 90_000,
   })
   if (!result.ok) return { ok: false, error: result.error }
 

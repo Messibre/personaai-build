@@ -12,7 +12,7 @@ import {
 } from "@/lib/questions/evidence"
 import { MAX_ANSWER_CHARS, PROJECT_QUESTIONS, type AnswerDraft, type ProjectQuestion } from "@/lib/questions/questions"
 
-const MAX_OUTPUT_TOKENS = 1024
+const MAX_OUTPUT_TOKENS = 4096
 const MAX_FOLLOW_UP_CHARS = 300
 const MAX_BUILT_FACTS = 5
 

@@ -163,8 +163,9 @@ export async function rewriteForJob(llm: LLMClient, input: RewriteInput): Promis
     prompt: buildRewritePrompt(context),
     schema: draftSchema,
     // A three-project draft with citations can exceed 2k tokens; truncated JSON fails validation.
-    maxOutputTokens: 8192,
-    minTimeoutMs: 60_000,
+    maxOutputTokens: 16_384,
+    // Leaves room inside the 300s generate route for a repair attempt and the draft check.
+    minTimeoutMs: 120_000,
   })
   if (!result.ok) return { ok: false, error: result.error }
 

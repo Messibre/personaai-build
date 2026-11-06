@@ -11,7 +11,7 @@ import { saveLedger } from "@/lib/job-match/report/store"
 import { explainCompatibility } from "@/lib/job-match/ai/explanation"
 
 export const runtime = "nodejs"
-export const maxDuration = 30
+export const maxDuration = 60
 
 export const POST = withGuards(handlePost, { route: "job-match", max: 5, windowMs: ONE_MINUTE_MS })
 
