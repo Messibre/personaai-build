@@ -5,7 +5,7 @@ import { getTailorDeps } from "@/lib/tailor/wire"
 import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 
 export const runtime = "nodejs"
-export const maxDuration = 60
+export const maxDuration = 120
 
 /** Re-checks a single edited sentence. A rejected edit is a normal answer (200 with ok:false), not an error. */
 async function handle(request: Request): Promise<Response> {

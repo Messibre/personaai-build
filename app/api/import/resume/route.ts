@@ -5,6 +5,7 @@ import { getLLMClient } from "@/lib/llm"
 import { ONE_MINUTE_MS, withGuards } from "@/lib/security/guard"
 
 export const runtime = "nodejs"
+export const maxDuration = 120
 
 const MAX_BODY_BYTES = 1_000_000
 

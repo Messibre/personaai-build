@@ -120,7 +120,7 @@ async function entailmentRejects(
       system: ENTAILMENT_SYSTEM,
       prompt,
       schema: entailmentSchema,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 4096,
     })
     if (!result.ok) return new Set()
     return new Set(

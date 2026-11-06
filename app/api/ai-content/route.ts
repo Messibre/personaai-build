@@ -12,7 +12,7 @@ import { isRecord, readJsonBody } from "@/lib/api/read-json";
 import * as cheerio from "cheerio";
 
 // One slow Gemini call plus a single non-JSON retry must fit inside the function limit.
-export const maxDuration = 90;
+export const maxDuration = 120;
 
 interface AIContentRequest {
   targetRole: string;

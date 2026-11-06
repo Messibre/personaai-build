@@ -10,14 +10,14 @@ export { MockClient } from "./mock"
 const envConfigSchema = z.object({
   provider: z.enum(["gemini", "mock"]).default("gemini"),
   model: z.string().min(1).default("gemini-2.5-flash"),
-  timeoutMs: z.coerce.number().positive().default(10_000),
+  timeoutMs: z.coerce.number().positive().default(60_000),
   geminiKeys: z.array(z.string().min(1)).default([]),
 })
 
 export type LLMEnvConfig = z.infer<typeof envConfigSchema>
 
-// Gemini 2.5 Flash routinely needs 10–20s for full portfolio copy; 10s caused silent fallbacks.
-export const DEFAULT_LLM_TIMEOUT_MS = 30_000
+// Gemini 2.5 Flash can take 30s+ under load on long prompts; shorter limits caused failed generations.
+export const DEFAULT_LLM_TIMEOUT_MS = 60_000
 
 /** Reads LLM_TIMEOUT_MS or GEMINI_TIMEOUT_MS; empty or invalid values are ignored. */
 export function readTimeoutEnv(): number | undefined {
