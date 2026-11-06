@@ -5,20 +5,7 @@ import type { Vault } from "@/lib/schemas/vault"
 import type { ContentSelection } from "@/lib/schemas/tailoring-preferences"
 export type { ContentSelection } from "@/lib/schemas/tailoring-preferences"
 
-export function selectedVault(vault: Vault, selection: ContentSelection): Vault {
-  return {
-    ...vault,
-    tailoringPreferences: undefined,
-    github: selection.github ? vault.github : undefined,
-    person: {
-      name: vault.person.name,
-      ...(selection.contacts.includes("email") && vault.person.email ? { email: vault.person.email } : {}),
-      links: vault.person.links.filter((link) => selection.contacts.includes(link)),
-    },
-    experience: vault.experience.filter((item) => selection.experience.includes(item.id)),
-    education: vault.education.filter((item) => selection.education.includes(item.id)),
-  }
-}
+export { selectedVault } from "@/lib/tailor/selected-vault"
 
 export function ContentSelectionForm({ vault, value, onChange, disabled }: {
   vault: Vault; value: ContentSelection; onChange: (next: ContentSelection) => void; disabled: boolean

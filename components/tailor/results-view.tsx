@@ -9,11 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { outputFileStem } from "@/lib/outputs/filename"
 import type { Draft } from "@/lib/schemas/draft"
 import type { JobProfile } from "@/lib/schemas/job"
+import type { ContentSelection } from "@/lib/schemas/tailoring-preferences"
 import type { Vault } from "@/lib/schemas/vault"
 import { renderFromDraft } from "@/lib/tailor/edit"
 import type { GenerateOutput } from "@/lib/tailor/pipeline"
 import type { ColorScheme, TemplateStyle } from "@/lib/types"
 import { EditableDraft } from "./editable-draft"
+import { PublishPanel } from "./publish-panel"
 import { RemovedPanel } from "./removed-panel"
 
 interface ResultsViewProps {
@@ -23,10 +25,11 @@ interface ResultsViewProps {
   template: TemplateStyle
   colorScheme: ColorScheme
   company?: string
+  selection: ContentSelection
   onVaultChange: (vault: Vault) => void | Promise<void>
 }
 
-export function ResultsView({ vault, job, output, template, colorScheme, company, onVaultChange }: ResultsViewProps) {
+export function ResultsView({ vault, job, output, template, colorScheme, company, selection, onVaultChange }: ResultsViewProps) {
   const fileStem = outputFileStem(vault.person.name, job.title)
 
   // Edits are tied to the draft they started from, so a new generation discards them without an effect.
@@ -64,6 +67,17 @@ export function ResultsView({ vault, job, output, template, colorScheme, company
           <CopyButton text={rendered.portfolioHtml} label="Copy HTML" />
         </div>
         <iframe title="Portfolio preview" srcDoc={rendered.portfolioHtml} sandbox="allow-scripts" className="h-[720px] w-full rounded-md border border-border" />
+        <PublishPanel
+          vaultId={vault.id}
+          selection={selection}
+          job={job}
+          draft={draft}
+          picks={rendered.picks}
+          template={template}
+          colorScheme={colorScheme}
+          company={company}
+          publicContacts={selection.contacts}
+        />
       </TabsContent>
       <TabsContent value="resume">
         <ResumeView html={rendered.resumeHtml} text={rendered.resumeText} fileStem={fileStem} />

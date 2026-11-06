@@ -271,6 +271,7 @@ export function TailorFlow() {
             template={template}
             colorScheme={colorScheme}
             company={company.trim() || undefined}
+  selection={selection}
             onVaultChange={async (updated) => {
               const merged = { ...vault, projects: updated.projects, experience: vault.experience.map((item) => updated.experience.find((next) => next.id === item.id) ?? item), updatedAt: updated.updatedAt }
               await saveVault(merged)
