@@ -102,6 +102,7 @@ export function ProjectList({
                       {counts.unconfirmed > 0 ? `, ${counts.unconfirmed} unconfirmed` : ", all confirmed"}
                     </CardDescription>
                   </CardHeader>
+                  {onChangeVault ? <FactReview project={entry} onChangeVault={onChangeVault} /> : null}
                 </Card>
               </li>
             )

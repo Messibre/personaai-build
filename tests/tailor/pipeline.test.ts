@@ -29,9 +29,20 @@ describe("analyzeStage", () => {
     }
   })
 
-  it("reports vault_empty when no project has a confirmed fact", async () => {
-    const result = await analyzeStage(makeDeps(), { vault: unconfirmed(loadAlexVault()), postingText: POSTING })
+  it("reports vault_empty when neither projects nor experience has a confirmed fact", async () => {
+    const vault = unconfirmed(loadAlexVault())
+    vault.experience = vault.experience.map((item) => ({ ...item, facts: item.facts.map((fact) => ({ ...fact, confirmed: false })) }))
+    const result = await analyzeStage(makeDeps(), { vault, postingText: POSTING })
     expect(result).toMatchObject({ ok: false, error: { code: "vault_empty" } })
+  })
+
+  it("accepts confirmed experience without projects", async () => {
+    const vault = loadAlexVault()
+    vault.projects = []
+    const result = await analyzeStage(makeDeps(), { vault, postingText: POSTING })
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.data.picks).toEqual([])
+    expect(validatePicks(vault, [])).toBeNull()
   })
 
   it("drops picks for unknown or unconfirmed projects and duplicates", async () => {
@@ -77,7 +88,7 @@ describe("validatePicks", () => {
   const vault = loadAlexVault()
   it("accepts good picks", () => expect(validatePicks(vault, uxPicks)).toBeNull())
   it("rejects empty, duplicate, unknown and unconfirmed picks", () => {
-    expect(validatePicks(vault, [])).not.toBeNull()
+    expect(validatePicks({ ...vault, experience: [] }, [])).not.toBeNull()
     expect(validatePicks(vault, [uxPicks[0], uxPicks[0]])).not.toBeNull()
     expect(validatePicks(vault, [{ projectId: "nope", matchedRequirementIds: [], score: 1 }])).not.toBeNull()
     expect(validatePicks(unconfirmed(vault), uxPicks)).not.toBeNull()

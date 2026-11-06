@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea"
 import type { Draft } from "@/lib/schemas/draft"
 import type { ProjectPick } from "@/lib/schemas/job"
 import type { Vault } from "@/lib/schemas/vault"
-import { saveVault } from "@/lib/ingest/client"
 import { editSentence } from "@/lib/tailor/client"
 import {
   MAX_EDIT_CHARS,
@@ -25,7 +24,7 @@ interface EditableDraftProps {
   draft: Draft
   picks: ProjectPick[]
   onDraftChange: (draft: Draft) => void
-  onVaultChange: (vault: Vault) => void
+  onVaultChange: (vault: Vault) => void | Promise<void>
 }
 
 interface Rejection {
@@ -111,7 +110,7 @@ interface SentenceRowProps {
   onStopEdit: () => void
   onDelete: () => void
   onDraftChange: (draft: Draft) => void
-  onVaultChange: (vault: Vault) => void
+  onVaultChange: (vault: Vault) => void | Promise<void>
 }
 
 function SentenceRow({ item, editing, vault, draft, picks, onStartEdit, onStopEdit, onDelete, onDraftChange, onVaultChange }: SentenceRowProps) {
@@ -172,8 +171,7 @@ function SentenceRow({ item, editing, vault, draft, picks, onStartEdit, onStopEd
     setError(null)
     try {
       const confirmed = confirmFact(pending.vault, pending.factId)
-      await saveVault(confirmed)
-      onVaultChange(confirmed)
+      await onVaultChange(confirmed)
       setBusy(false)
       await submit([pending.factId], confirmed)
     } catch (err: unknown) {

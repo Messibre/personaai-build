@@ -191,6 +191,7 @@ export const PORTFOLIO_SECTIONS = [
 export type SectionId = (typeof PORTFOLIO_SECTIONS)[number]["id"]
 
 export interface SocialLinks {
+  email?: string
   linkedin?: string
   twitter?: string
   substack?: string

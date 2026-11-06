@@ -266,7 +266,7 @@ export function addUnconfirmedUserFact(
 
 /* ---------- re-rendering ---------- */
 
-const DEFAULT_SECTIONS: PortfolioConfig["sections"] = ["about", "skills", "projects", "experience", "github-stats", "contact"]
+const DEFAULT_SECTIONS: PortfolioConfig["sections"] = ["about", "skills", "projects", "experience", "education", "github-stats", "contact"]
 
 export interface RenderInput {
   vault: Vault

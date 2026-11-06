@@ -30,6 +30,11 @@ export function buildContact(profile: GitHubProfile, accent: string, socialLinks
     icons.push(`<a href="${safeUrl(blogUrl)}" target="_blank" rel="noopener" class="social-link" aria-label="Personal website" title="Website">${SOCIAL_SVGS.blog}</a>`)
   }
 
+  if (socialLinks?.email && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(socialLinks.email)) {
+    icons.push(`<a href="mailto:${e(encodeURIComponent(socialLinks.email))}" class="social-link" aria-label="Email">${e(socialLinks.email)}</a>`)
+  }
+  if (!icons.length) return ""
+
   return `
   <section id="contact" class="section">
     <div class="container" style="text-align:center">
@@ -40,9 +45,9 @@ export function buildContact(profile: GitHubProfile, accent: string, socialLinks
         ${icons.join("\n        ")}
       </div>
       <div class="reveal" style="display:flex;flex-direction:column;align-items:center;gap:12px">
-        <a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" style="padding:14px 36px;background:${accent};color:#000;border-radius:12px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px" aria-label="View GitHub profile">
+        ${profile.html_url && safeUrl(profile.html_url) !== "#" ? `<a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" style="padding:14px 36px;background:${accent};color:#000;border-radius:12px;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:8px" aria-label="View GitHub profile">
           ${SOCIAL_SVGS.github} View GitHub Profile
-        </a>
+        </a>` : ""}
       </div>
     </div>
   </section>

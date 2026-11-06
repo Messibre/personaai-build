@@ -9,7 +9,7 @@ export interface BuildTemplateDataInput {
   draft: Draft
   picks: ProjectPick[]
   config: PortfolioConfig
-  /** Only the title is used; it becomes the "now" focus line. */
+  /** Job context is intentionally never rendered as a personal career claim. */
   job?: Pick<JobProfile, "title">
 }
 
@@ -50,11 +50,11 @@ function toProfile(vault: Vault): GitHubProfile {
     bio: null,
     avatar_url: username
       ? `https://github.com/${encodeURIComponent(username)}.png?size=460`
-      : `https://ui-avatars.com/api/?name=${encodeURIComponent(vault.person.name)}&size=460&background=1f2937&color=e5e7eb&format=png`,
+      : "",
     followers: 0,
     following: 0,
     public_repos: 0,
-    html_url: username ? `https://github.com/${encodeURIComponent(username)}` : "",
+    html_url: username ? `https://github.com/${encodeURIComponent(username)}` : vault.person.links.find((link) => hostOf(link) === "github.com") ?? "",
     location: null,
     blog: null,
     company: null,
@@ -114,17 +114,22 @@ function toRepos(vault: Vault, picks: ProjectPick[]): GitHubRepo[] {
     }))
 }
 
-export function buildTemplateData({ vault, draft, picks, config, job }: BuildTemplateDataInput): TemplateData {
-  const socialLinks = toSocialLinks(vault.person.links)
-  const sections = vault.github ? [...config.sections] : config.sections.filter((section) => section !== "github-stats")
+export function buildTemplateData({ vault, draft, picks, config }: BuildTemplateDataInput): TemplateData {
+  const socialLinks = { ...toSocialLinks(vault.person.links), ...(vault.person.email ? { email: vault.person.email } : {}) }
   const about = joinSentences(draft.about)
   const tagline = draft.tagline.trim()
+  const projects = toAIProjects(vault, draft, picks)
+  const repos = toRepos(vault, picks)
+  const highlights = vault.experience.flatMap((item) => item.facts.filter((fact) => fact.confirmed).map((fact) => `${item.title} · ${item.company}: ${fact.text}`))
+  const available = new Set([...(about || tagline ? ["about"] : []), ...(projects.length ? ["projects"] : []), ...(repos.some((repo) => repo.language || repo.topics.length) ? ["skills"] : []), ...(highlights.length ? ["experience"] : []), ...(vault.education.length ? ["education"] : []), ...(vault.github || vault.person.links.some((link) => hostOf(link) === "github.com") || Object.values(socialLinks).some(Boolean) ? ["contact"] : [])])
+  const sections = config.sections.filter((section) => available.has(section))
 
   return {
+    education: vault.education,
     profile: toProfile(vault),
     repos: toRepos(vault, picks),
     resumeText: null,
-    aiResume: null,
+    aiResume: highlights.length ? { highlights } : null,
     notionContent: null,
     config: { ...config, sections, socialLinks },
     photoUrl: null,
@@ -132,6 +137,6 @@ export function buildTemplateData({ vault, draft, picks, config, job }: BuildTem
     socialLinks,
     aiProjects: toAIProjects(vault, draft, picks),
     heroTagline: tagline || null,
-    targetRole: job?.title ?? null,
+    targetRole: null,
   }
 }

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { tailoringPreferencesSchema } from "./tailoring-preferences"
 
 export const VAULT_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/
 
@@ -136,6 +137,7 @@ export const vaultSchema = z
     education: z.array(educationSchema),
     skills: z.array(skillSchema),
     applications: z.array(applicationSchema),
+    tailoringPreferences: tailoringPreferencesSchema.optional(),
   })
   .strict()
 export type Vault = z.infer<typeof vaultSchema>

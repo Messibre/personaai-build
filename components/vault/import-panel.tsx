@@ -13,6 +13,8 @@ import { friendlyMessage, loadVault, saveVault } from "@/lib/ingest/client"
 import { DEFAULT_VAULT_NAME, mergeImport, type ImportBundle } from "@/lib/ingest/merge"
 import type { Vault } from "@/lib/schemas/vault"
 import { createEmptyVault } from "@/lib/vault/ops"
+import { createVaultUpdateQueue } from "@/lib/vault/update-queue"
+import { ProfileEditor } from "./profile-editor"
 
 const VAULT_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/
 
@@ -47,36 +49,39 @@ export function ImportPanel() {
     return () => controller.abort()
   }, [idParam, vault?.id])
 
-  const applyImport = useCallback(
-    async (bundle: ImportBundle) => {
-      let current = vault
-      const lastId = !current && !idParam ? readLastVaultId() : null
-      if (lastId) {
-        // Importing before pressing "Continue" must not orphan the saved vault.
-        current = await loadVault(lastId).catch(() => null)
+  const vaultRef = useRef<Vault | null>(null)
+  const queue = useRef(createVaultUpdateQueue())
+  useEffect(() => { vaultRef.current = vault }, [vault])
+
+  const applyImport = useCallback(async (bundle: ImportBundle) => {
+    await queue.current(async () => {
+      let current = vaultRef.current
+      const savedId = idParam ?? readLastVaultId()
+      if (!current && savedId) {
+        current = await loadVault(savedId)
+        if (!current) throw new Error("Your saved vault could not be found. Open it before importing more data.")
       }
-      const base = current ?? { ...createEmptyVault(DEFAULT_VAULT_NAME), ...(idParam ? { id: idParam } : {}) }
+      const base = current ?? createEmptyVault(DEFAULT_VAULT_NAME)
       const next = mergeImport(base, bundle)
-      if (next === base && vault) return
       await saveVault(next)
+      vaultRef.current = next
+      rememberVaultId(next.id)
       setVault(next)
       if (idParam !== next.id) router.replace(`/vault?id=${next.id}`)
-    },
-    [vault, idParam, router],
-  )
-
-  const vaultRef = useRef<Vault | null>(null)
-  useEffect(() => {
-    vaultRef.current = vault
-  }, [vault])
+      return next
+    })
+  }, [idParam, router])
 
   const commitVault = useCallback(async (update: (current: Vault) => Vault) => {
-    const current = vaultRef.current
-    if (!current) return
-    const next = update(current)
-    await saveVault(next)
-    vaultRef.current = next
-    setVault(next)
+    await queue.current(async () => {
+      const current = vaultRef.current
+      if (!current) throw new Error("Open your vault before saving changes.")
+      const next = update(current)
+      await saveVault(next)
+      vaultRef.current = next
+      setVault(next)
+      return next
+    })
   }, [])
 
   useEffect(() => {
@@ -100,6 +105,8 @@ export function ImportPanel() {
 
       {!idParam && !vault ? <ContinueLastVault basePath="/vault" /> : null}
 
+      <p className="text-muted-foreground">Add GitHub, a resume, or both—in either order. New imports are combined with this vault; your confirmed facts stay intact.</p>
+      {vault ? <ProfileEditor key={vault.id} vault={vault} onSave={commitVault} /> : null}
       <div className="grid gap-6 md:grid-cols-2">
         <GitHubImportCard disabled={blocked} onImport={applyImport} />
         <ResumeImportCard disabled={blocked} onImport={applyImport} />

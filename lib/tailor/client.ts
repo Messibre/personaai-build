@@ -1,6 +1,7 @@
 import type { Draft } from "@/lib/schemas/draft"
 import { guardedFetch, type ApiPath } from "@/lib/security/guarded-fetch"
 import type { JobProfile, ProjectPick } from "@/lib/schemas/job"
+import type { ContentSelection } from "@/lib/schemas/tailoring-preferences"
 import type { Vault } from "@/lib/schemas/vault"
 import type { ColorScheme, TemplateStyle } from "@/lib/types"
 import type { EditResult, SectionRef } from "./edit"
@@ -60,6 +61,56 @@ export function editSentence(
   signal?: AbortSignal,
 ): Promise<EditResult> {
   return post("/api/tailor/edit", input, signal)
+}
+
+export interface PublishStarted {
+  deploymentId: string
+  project: string
+  statusToken: string
+  reused: boolean
+}
+
+export interface PublishStatus {
+  state: "building" | "ready" | "failed"
+  url?: string
+}
+
+export function publishPortfolio(
+  input: {
+    vaultId: string
+    selection: ContentSelection
+    job: JobProfile
+    draft: Draft
+    picks: ProjectPick[]
+    template: TemplateStyle
+    colorScheme: ColorScheme
+    company?: string
+    confirmPublic: true
+  },
+  signal?: AbortSignal,
+): Promise<PublishStarted> {
+  return post("/api/tailor/publish", input, signal)
+}
+
+export async function getPublishStatus(statusToken: string, signal?: AbortSignal): Promise<PublishStatus> {
+  let response: Response
+  try {
+    response = await guardedFetch(`/api/tailor/publish/status?token=${encodeURIComponent(statusToken)}`, { signal })
+  } catch (error) {
+    if (signal?.aborted) throw error
+    throw new TailorApiError("Could not reach the server. Check your connection and try again.")
+  }
+  if (!response.ok) {
+    let message = "Publishing status is not available right now."
+    try {
+      const body = (await response.json()) as { error?: unknown }
+      if (typeof body.error === "string" && body.error) message = body.error
+    } catch {
+      // keep the generic message
+    }
+    throw new TailorApiError(message)
+  }
+  return (await response.json()) as PublishStatus
 }
 
 export function isAbort(error: unknown): boolean {

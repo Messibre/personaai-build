@@ -7,6 +7,10 @@ If this file and a chat instruction disagree, **stop and ask**. Do not pick one 
 
 ---
 
+## Approved task exception: feat/update-flow
+
+The user approved a cross-module Work Vault flow overhaul on `feat/update-flow`: profile/contact editing, combined imports, selection and grounded rewriting, shared output/template rendering, guarded active-flow publishing, and corresponding routes, security helpers and tests. These changes may span the task scopes below. Legacy generation, wizard and legacy deployment remain frozen. Confirmed-fact safety, evidence verification, guards and mandatory verification still apply. No dependency additions without approval.
+
 ## Pivot: Work Vault (current focus)
 
 PersonaAI is pivoting from "a portfolio for everyone" to a **job-tailoring tool**. This section is the current focus and takes precedence over the lesson plan below wherever they conflict. All existing rules in this file still apply.
