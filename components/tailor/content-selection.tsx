@@ -2,16 +2,13 @@
 
 import type { Vault } from "@/lib/schemas/vault"
 
-export interface ContentSelection {
-  experience: string[]
-  education: string[]
-  contacts: string[]
-  github: boolean
-}
+import type { ContentSelection } from "@/lib/schemas/tailoring-preferences"
+export type { ContentSelection } from "@/lib/schemas/tailoring-preferences"
 
 export function selectedVault(vault: Vault, selection: ContentSelection): Vault {
   return {
     ...vault,
+    tailoringPreferences: undefined,
     github: selection.github ? vault.github : undefined,
     person: {
       name: vault.person.name,

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { ONE_MINUTE_MS, withRateLimit } from "@/lib/security/guard"
 import { vaultSchema } from "@/lib/schemas/vault"
+import { reconcilePreferences } from "@/lib/tailor/preferences"
 import { NO_PERSISTENT_STORE_MESSAGE, getServerVaultStore } from "@/lib/vault/index"
 import { VaultStoreError, isValidVaultId, type VaultStore } from "@/lib/vault/store"
 
@@ -98,6 +99,10 @@ async function handlePut(request: Request, context: RouteContext): Promise<Respo
   }
   if (parsed.data.id !== id) {
     return errorResponse(400, "Vault id in the body does not match the URL.")
+  }
+
+  if (parsed.data.tailoringPreferences) {
+    parsed.data.tailoringPreferences = reconcilePreferences(parsed.data, parsed.data.tailoringPreferences)
   }
 
   try {

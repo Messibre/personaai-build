@@ -9,7 +9,8 @@ import type { JobProfile } from "@/lib/schemas/job"
 import type { Gap } from "@/lib/schemas/tailor"
 import type { Vault } from "@/lib/schemas/vault"
 import { includedCount, type SelectableProject } from "@/lib/tailor/selection"
-import { COLOR_SCHEMES, TEMPLATE_OPTIONS, type ColorScheme, type TemplateStyle } from "@/lib/types"
+import { COLOR_SCHEMES, type ColorScheme, type TemplateStyle } from "@/lib/types"
+import { TemplateChooser } from "./template-chooser"
 
 interface AnalysisReviewProps {
   vault: Vault
@@ -38,8 +39,9 @@ export function AnalysisReview(props: AnalysisReviewProps) {
     <div className="flex flex-col gap-8">
       <section aria-labelledby="job-summary" className="flex flex-col gap-3">
         <h3 id="job-summary" className="text-lg font-semibold text-foreground">
-          {job.title}
+          {job.title.length > 90 ? `${job.title.slice(0, 87).trimEnd()}…` : job.title}
         </h3>
+        <p className="text-sm text-muted-foreground">Private match context—never a claim about your current role.</p>
         {job.topThree.length > 0 ? (
           <div>
             <p className="text-sm font-medium text-foreground">What this job cares about most</p>
@@ -52,10 +54,10 @@ export function AnalysisReview(props: AnalysisReviewProps) {
         ) : null}
       </section>
 
-      <section aria-labelledby="gaps-heading" className="flex flex-col gap-3">
-        <h3 id="gaps-heading" className="text-lg font-semibold text-foreground">
-          Gaps
-        </h3>
+      <details className="rounded-lg border border-border p-4">
+        <summary className="cursor-pointer font-medium text-foreground">Requirements and gaps ({gaps.length})</summary>
+        <section aria-label="Match details" className="mt-4 flex flex-col gap-3">
+        <p className="text-sm text-muted-foreground">{job.title}</p>
         {gaps.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing in your confirmed facts is missing for this posting.</p>
         ) : (
@@ -71,7 +73,8 @@ export function AnalysisReview(props: AnalysisReviewProps) {
             ))}
           </ul>
         )}
-      </section>
+        </section>
+      </details>
 
       <section aria-labelledby="picks-heading" className="flex flex-col gap-3">
         <h3 id="picks-heading" className="text-lg font-semibold text-foreground">
@@ -116,17 +119,8 @@ export function AnalysisReview(props: AnalysisReviewProps) {
         <h3 id="style-heading" className="text-lg font-semibold text-foreground">
           Portfolio style
         </h3>
+        <TemplateChooser value={props.template} colorScheme={props.colorScheme} disabled={busy} onChange={props.onTemplateChange} />
         <div className="flex flex-wrap gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="template">Template</Label>
-            <select id="template" className={selectClass} value={props.template} disabled={busy} onChange={(event) => props.onTemplateChange(event.target.value as TemplateStyle)}>
-              {TEMPLATE_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="color-scheme">Colors</Label>
             <select id="color-scheme" className={selectClass} value={props.colorScheme} disabled={busy} onChange={(event) => props.onColorSchemeChange(event.target.value as ColorScheme)}>

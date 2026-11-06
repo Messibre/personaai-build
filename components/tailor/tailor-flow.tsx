@@ -14,6 +14,7 @@ import type { Vault } from "@/lib/schemas/vault"
 import { analyzeJob, generateOutputs, isAbort } from "@/lib/tailor/client"
 import type { GenerateOutput } from "@/lib/tailor/pipeline"
 import { recordIfGenerated } from "@/lib/tailor/record"
+import { reconcilePreferences, reconcileSelection, restoreProjectChoices } from "@/lib/tailor/preferences"
 import { moveItem, toPicksPayload, toSelectable, toggleIncluded, type SelectableProject } from "@/lib/tailor/selection"
 import type { ColorScheme, TemplateStyle } from "@/lib/types"
 import { AnalysisReview } from "./analysis-review"
@@ -70,7 +71,14 @@ export function TailorFlow() {
     loadVault(vaultId, controller.signal)
       .then((loaded) => {
         setVault(loaded)
-        if (loaded) setSelection({ experience: loaded.experience.filter((item) => item.facts.some((fact) => fact.confirmed)).map((item) => item.id), education: loaded.education.map((item) => item.id), contacts: [], github: false })
+        if (loaded) {
+          const saved = loaded.tailoringPreferences
+          setSelection(reconcileSelection(loaded, saved?.selection))
+          setPostingText(saved?.postingText ?? "")
+          setCompany(saved?.company ?? "")
+          setTemplate(saved?.template ?? "minimal-clean")
+          setColorScheme(saved?.colorScheme ?? "ocean")
+        }
         setLoading(false)
       })
       .catch((err: unknown) => {
@@ -87,6 +95,26 @@ export function TailorFlow() {
     heading.current?.focus()
   }, [stage])
 
+  const persistChoices = useCallback(async () => {
+    if (!vault) throw new Error("Open a vault before saving choices.")
+    const latest = await loadVault(vault.id)
+    if (!latest) throw new Error("Your vault could not be found. Nothing was overwritten.")
+    const updated: Vault = { ...latest, updatedAt: new Date().toISOString(), tailoringPreferences: reconcilePreferences(latest, {
+      postingText, company, selection, projects: items.length ? items.map(({ projectId, included }) => ({ projectId, included })) : latest.tailoringPreferences?.postingText === postingText ? latest.tailoringPreferences.projects : [], template, colorScheme,
+    }) }
+    await saveVault(updated)
+    setVault(updated)
+    return updated
+  }, [vault, postingText, company, selection, items, template, colorScheme])
+
+  const saveChoices = async () => {
+    setBusy(true)
+    setNotice(null)
+    try { await persistChoices(); setNotice("Choices saved. Your posting stays in your secret-link vault, not in public output.") }
+    catch (err) { setNotice(`Choices could not be saved: ${friendlyMessage(err)}`) }
+    finally { setBusy(false) }
+  }
+
   const runAnalyze = useCallback(async () => {
     if (!vault) return
     request.current?.abort()
@@ -98,7 +126,7 @@ export function TailorFlow() {
       const result = await analyzeJob(vault, postingText, controller.signal)
       setJob(result.job)
       setGaps(result.gaps)
-      setItems(toSelectable(result.picks))
+      setItems(restoreProjectChoices(toSelectable(result.picks), vault.tailoringPreferences, postingText))
       setOutput(null)
       setStage("review")
     } catch (err) {
@@ -118,7 +146,8 @@ export function TailorFlow() {
     setError(null)
     setNotice(null)
     try {
-      const includedVault = selectedVault(vault, selection)
+      const savedVault = await persistChoices()
+      const includedVault = selectedVault(savedVault, selection)
       const result = await generateOutputs(
         { vault: includedVault, job, picks: toPicksPayload(items), template, colorScheme, ...(company.trim() ? { company: company.trim() } : {}) },
         controller.signal,
@@ -127,8 +156,8 @@ export function TailorFlow() {
       setOutputVault(includedVault)
       setStage("done")
       try {
-        const updated = await recordIfGenerated(vault, { ok: true, data: result }, { job, postingText, company })
-        if (updated !== vault) {
+        const updated = await recordIfGenerated(savedVault, { ok: true, data: result }, { job, postingText, company })
+        if (updated !== savedVault) {
           await saveVault(updated)
           setVault(updated)
         }
@@ -141,7 +170,7 @@ export function TailorFlow() {
     } finally {
       if (request.current === controller) setBusy(false)
     }
-  }, [vault, job, items, template, colorScheme, company, postingText, selection])
+  }, [vault, job, items, template, colorScheme, company, postingText, selection, persistChoices])
 
   if (!vaultId) {
     return (
@@ -198,6 +227,11 @@ export function TailorFlow() {
           <AlertDescription>{notice}</AlertDescription>
         </Alert>
       ) : null}
+
+      {stage !== "done" ? <div className="flex flex-wrap items-center gap-3">
+        <Button type="button" variant="outline" disabled={busy} onClick={() => void saveChoices()}>Save choices</Button>
+        <p className="text-sm text-muted-foreground">Save to resume after a reload. Your vault link also grants access to this saved posting. Generation saves choices automatically.</p>
+      </div> : null}
 
       {stage === "input" ? (
         <JobStep postingText={postingText} company={company} busy={busy} onPostingChange={setPostingText} onCompanyChange={setCompany} onSubmit={() => void runAnalyze()} />
