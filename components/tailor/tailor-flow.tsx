@@ -20,6 +20,7 @@ import { AnalysisReview } from "./analysis-review"
 import { FeedbackPrompt } from "./feedback-prompt"
 import { JobStep } from "./job-step"
 import { ResultsView } from "./results-view"
+import { ContentSelectionForm, selectedVault, type ContentSelection } from "./content-selection"
 
 const VAULT_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/
 
@@ -52,6 +53,8 @@ export function TailorFlow() {
   const [template, setTemplate] = useState<TemplateStyle>("bento-grid")
   const [colorScheme, setColorScheme] = useState<ColorScheme>("ocean")
   const [output, setOutput] = useState<GenerateOutput | null>(null)
+  const [selection, setSelection] = useState<ContentSelection>({ experience: [], education: [], contacts: [], github: false })
+  const [outputVault, setOutputVault] = useState<Vault | null>(null)
 
   const request = useRef<AbortController | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -67,6 +70,7 @@ export function TailorFlow() {
     loadVault(vaultId, controller.signal)
       .then((loaded) => {
         setVault(loaded)
+        if (loaded) setSelection({ experience: loaded.experience.filter((item) => item.facts.some((fact) => fact.confirmed)).map((item) => item.id), education: loaded.education.map((item) => item.id), contacts: [], github: false })
         setLoading(false)
       })
       .catch((err: unknown) => {
@@ -114,11 +118,13 @@ export function TailorFlow() {
     setError(null)
     setNotice(null)
     try {
+      const includedVault = selectedVault(vault, selection)
       const result = await generateOutputs(
-        { vault, job, picks: toPicksPayload(items), template, colorScheme, ...(company.trim() ? { company: company.trim() } : {}) },
+        { vault: includedVault, job, picks: toPicksPayload(items), template, colorScheme, ...(company.trim() ? { company: company.trim() } : {}) },
         controller.signal,
       )
       setOutput(result)
+      setOutputVault(includedVault)
       setStage("done")
       try {
         const updated = await recordIfGenerated(vault, { ok: true, data: result }, { job, postingText, company })
@@ -135,7 +141,7 @@ export function TailorFlow() {
     } finally {
       if (request.current === controller) setBusy(false)
     }
-  }, [vault, job, items, template, colorScheme, company, postingText])
+  }, [vault, job, items, template, colorScheme, company, postingText, selection])
 
   if (!vaultId) {
     return (
@@ -199,6 +205,7 @@ export function TailorFlow() {
 
       {stage === "review" && job ? (
         <>
+          <ContentSelectionForm vault={vault} value={selection} onChange={setSelection} disabled={busy} />
           <AnalysisReview
             vault={vault}
             job={job}
@@ -224,13 +231,18 @@ export function TailorFlow() {
       {stage === "done" && output && job ? (
         <>
           <ResultsView
-            vault={vault}
+            vault={outputVault ?? vault}
             job={job}
             output={output}
             template={template}
             colorScheme={colorScheme}
             company={company.trim() || undefined}
-            onVaultChange={setVault}
+            onVaultChange={async (updated) => {
+              const merged = { ...vault, projects: updated.projects, experience: vault.experience.map((item) => updated.experience.find((next) => next.id === item.id) ?? item), updatedAt: updated.updatedAt }
+              await saveVault(merged)
+              setVault(merged)
+              setOutputVault(updated)
+            }}
           />
           <FeedbackPrompt key={`${vault.id}:${postingText}`} vault={vault} postingText={postingText} onSaved={setVault} />
           <div>

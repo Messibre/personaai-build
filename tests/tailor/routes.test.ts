@@ -41,7 +41,7 @@ describe("/api/tailor/generate", () => {
   const base = { vault: loadAlexVault(), job: uxJob, picks: uxPicks, template: "minimal-clean", colorScheme: "ocean" }
 
   it("rejects invalid bodies with 400", async () => {
-    expect((await post(generate, JSON.stringify({ ...base, picks: [] }))).status).toBe(400)
+    expect((await post(generate, JSON.stringify({ ...base, vault: { ...base.vault, experience: [] }, picks: [] }))).status).toBe(400)
     expect((await post(generate, JSON.stringify({ ...base, template: "nope" }))).status).toBe(400)
   })
 

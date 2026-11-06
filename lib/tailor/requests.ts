@@ -19,7 +19,7 @@ export const generateRequestSchema = z
   .object({
     vault: vaultSchema,
     job: jobProfileSchema,
-    picks: z.array(projectPickSchema).min(1).max(4),
+    picks: z.array(projectPickSchema).max(4),
     template: z.enum(templateIds),
     colorScheme: z.enum(colorSchemeIds),
     company: z.string().trim().max(200).optional(),

@@ -23,7 +23,7 @@ interface ResultsViewProps {
   template: TemplateStyle
   colorScheme: ColorScheme
   company?: string
-  onVaultChange: (vault: Vault) => void
+  onVaultChange: (vault: Vault) => void | Promise<void>
 }
 
 export function ResultsView({ vault, job, output, template, colorScheme, company, onVaultChange }: ResultsViewProps) {

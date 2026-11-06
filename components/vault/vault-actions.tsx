@@ -9,7 +9,7 @@ import type { Vault } from "@/lib/schemas/vault"
 type CopyStatus = "idle" | "copied" | "failed"
 
 export function hasTailorableProject(vault: Vault): boolean {
-  return vault.projects.some((project) => project.facts.some((fact) => fact.confirmed === true))
+  return [...vault.projects, ...vault.experience].some((item) => item.facts.some((fact) => fact.confirmed === true))
 }
 
 export function VaultActions({ vault }: { vault: Vault }) {
@@ -51,7 +51,7 @@ export function VaultActions({ vault }: { vault: Vault }) {
                 Tailor to a job
               </Button>
               <p id={hintId} className="text-sm text-muted-foreground">
-                Confirm at least one fact on a project first. Answer its questions or confirm an imported fact below.
+                Confirm at least one project or experience fact below to continue.
               </p>
             </>
           )}

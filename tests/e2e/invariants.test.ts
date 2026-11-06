@@ -64,7 +64,7 @@ describe("Product invariants across three vaults and four postings", () => {
         holder.client = llm.client
 
         const analyzed = await analyze(postRequest("/api/tailor/analyze", { vault, postingText: posting }))
-        if (vault.projects.every((p) => !p.facts.some((f) => f.confirmed))) {
+        if ([...vault.projects, ...vault.experience].every((item) => !item.facts.some((fact) => fact.confirmed))) {
           expect(analyzed.status).toBe(400)
           expect(await json(analyzed)).toMatchObject({ code: "vault_empty" })
           return

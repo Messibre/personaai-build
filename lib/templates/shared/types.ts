@@ -1,6 +1,7 @@
 import type { GitHubProfile, GitHubRepo, PortfolioConfig, AIProject, SocialLinks } from "../../types"
 
 export interface TemplateData {
+  education?: { institution: string; degree?: string; start?: string; end?: string }[]
   profile: GitHubProfile
   repos: GitHubRepo[]
   resumeText: string | null

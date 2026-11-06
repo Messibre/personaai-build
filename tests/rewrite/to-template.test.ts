@@ -46,22 +46,23 @@ describe("buildTemplateData", () => {
     })
     expect(data.heroTagline).toBe(draft.tagline)
     expect(data.aiBio).toBe(draft.about.map((sentence) => sentence.text).join(" "))
-    expect(data.targetRole).toBe("UX Engineer")
-    expect(data.aiResume).toBeNull()
+    expect(data.targetRole).toBeNull()
+    expect(data.config.sections).not.toContain("now")
+    expect(data.aiResume?.highlights).toEqual(vault.experience.flatMap((item) => item.facts.filter((fact) => fact.confirmed).map((fact) => `${item.title} · ${item.company}: ${fact.text}`)))
     expect(data.repos.length).toBeGreaterThan(0)
     expect(data.repos.every((repo) => repo.description === null && repo.fork === false)).toBe(true)
     expect(data.repos[0]).toMatchObject({ name: "motion-tokens", language: "TypeScript" })
     expect(data.profile.avatar_url).toBe("https://github.com/alexchen-ui.png?size=460")
     expect(data.profile.username).toBe("alexchen-ui")
-    expect(data.socialLinks).toEqual({ linkedin: "https://linkedin.com/in/alexchen-ui", blog: "https://alexchen.dev" })
+    expect(data.socialLinks).toEqual({ linkedin: "https://linkedin.com/in/alexchen-ui", blog: "https://alexchen.dev", ...(vault.person.email ? { email: vault.person.email } : {}) })
   })
 
-  it("keeps github-stats when the vault has a GitHub username and does not mutate the input config", async () => {
+  it("omits invented profile statistics even with a GitHub username and preserves the input config", async () => {
     const vault = loadAlexVault()
     const config = configFor("minimal-clean")
     const data = buildTemplateData({ vault, draft: await draftFor(vault, uxJob, uxPicks), picks: uxPicks, config })
 
-    expect(data.config.sections).toContain("github-stats")
+    expect(data.config.sections).not.toContain("github-stats")
     expect(config.sections).toEqual(ALL_SECTIONS)
   })
 
@@ -122,6 +123,17 @@ describe("rendered HTML", () => {
 
     it("renders the resume-only vault without leaked values", async () => {
       expectNoLeakedValues(await renderResumeOnly())
+    })
+
+    it("renders selected education and local initials without external avatar requests", async () => {
+      const vault = loadResumeOnlyVault()
+      vault.education = [{ id: "education_selected", institution: "Selected University", degree: "Computer Science" }]
+      const draft = await draftFor(vault, uxJob, [])
+      const html = buildPortfolioHtml(buildTemplateData({ vault, draft, picks: [], config: configFor(template) }))
+      expect(html).toContain('id="education"')
+      expect(textContent(html)).toContain("Selected University")
+      expect(html).not.toContain("ui-avatars.com")
+      expect(html).not.toContain('src=""')
     })
 
     // These templates hard-code a "Followers" stat in the hero for every portfolio. Remove the

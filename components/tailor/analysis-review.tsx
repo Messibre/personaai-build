@@ -77,7 +77,7 @@ export function AnalysisReview(props: AnalysisReviewProps) {
         <h3 id="picks-heading" className="text-lg font-semibold text-foreground">
           Projects to feature
         </h3>
-        <p className="text-sm text-muted-foreground">Reorder or remove projects. At least one must stay.</p>
+        <p className="text-sm text-muted-foreground">{items.length ? "Reorder or remove projects. At least one must stay." : "No project is required for a resume-only vault. Include an experience with confirmed facts above."}</p>
         <ul className="flex flex-col gap-2">
           {items.map((item, index) => {
             const project = vault.projects.find((candidate) => candidate.id === item.projectId)

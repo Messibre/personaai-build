@@ -17,7 +17,7 @@ const SOURCE_LABEL: Record<Fact["source"], string> = {
 
 type ChangeVault = (update: (vault: Vault) => Vault) => Promise<void>
 
-export function FactReview({ project, onChangeVault }: { project: Project; onChangeVault: ChangeVault }) {
+export function FactReview({ project, onChangeVault }: { project: Pick<Project, "facts">; onChangeVault: ChangeVault }) {
   const headingId = useId()
   if (project.facts.length === 0) return null
   return (

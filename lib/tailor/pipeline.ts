@@ -35,10 +35,14 @@ function fail<T>(code: TailorErrorCode, message: string): StageResult<T> {
 }
 
 const UNAVAILABLE_MESSAGE = "This step is not available yet. Please try again later."
-const DEFAULT_SECTIONS: PortfolioConfig["sections"] = ["about", "skills", "projects", "experience", "github-stats", "contact"]
+const DEFAULT_SECTIONS: PortfolioConfig["sections"] = ["about", "skills", "projects", "experience", "education", "github-stats", "contact"]
 
 export function hasConfirmedFacts(project: Vault["projects"][number]): boolean {
   return project.facts.some((fact) => fact.confirmed)
+}
+
+function hasConfirmedExperience(vault: Vault): boolean {
+  return vault.experience.some((item) => item.facts.some((fact) => fact.confirmed))
 }
 
 function vaultWithEligibleProjects(vault: Vault): Vault {
@@ -68,7 +72,7 @@ export async function analyzeStage(deps: TailorDeps, input: AnalyzeInput): Promi
   }
 
   const eligible = vaultWithEligibleProjects(input.vault)
-  if (eligible.projects.length === 0) return vaultEmpty()
+  if (eligible.projects.length === 0 && !hasConfirmedExperience(eligible)) return vaultEmpty()
 
   try {
     const analysis = await deps.analyzeJob(deps.llm, postingText)
@@ -86,7 +90,7 @@ export async function analyzeStage(deps: TailorDeps, input: AnalyzeInput): Promi
       })
       .slice(0, MAX_PICKS)
 
-    if (picks.length === 0) return vaultEmpty()
+    if (picks.length === 0 && !hasConfirmedExperience(eligible)) return vaultEmpty()
     return { ok: true, data: { job: analysis.data, gaps, picks } }
   } catch {
     return fail("unavailable", UNAVAILABLE_MESSAGE)
@@ -96,7 +100,7 @@ export async function analyzeStage(deps: TailorDeps, input: AnalyzeInput): Promi
 function vaultEmpty<T>(): StageResult<T> {
   return fail(
     "vault_empty",
-    "None of your projects has a confirmed fact yet. Add and confirm some in your vault at /vault, then come back.",
+    "None of your projects or experiences has a confirmed fact yet. Add and confirm some in your vault at /vault, then come back.",
   )
 }
 
@@ -141,7 +145,8 @@ function onlyContainsOriginalSentences(original: Draft, clean: Draft): boolean {
 }
 
 export function validatePicks(vault: Vault, picks: ProjectPick[]): string | null {
-  if (picks.length === 0 || picks.length > MAX_PICKS) return `Choose between 1 and ${MAX_PICKS} projects.`
+  if (picks.length === 0 && !hasConfirmedExperience(vault)) return "Include a project or experience with confirmed facts."
+  if (picks.length > MAX_PICKS) return `Choose no more than ${MAX_PICKS} projects.`
   const ids = picks.map((pick) => pick.projectId)
   if (new Set(ids).size !== ids.length) return "Each project can only be chosen once."
   const known = new Map(vault.projects.map((project) => [project.id, project]))

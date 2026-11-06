@@ -24,7 +24,7 @@ export function buildAbout(profile: GitHubProfile, aiBio: string | null, accent:
       </div>` : ""}
       <div style="display:flex;gap:12px;flex-wrap:wrap" class="reveal">
         ${profile.blog && safeUrl(profile.blog) !== "#" ? `<a href="${safeUrl(profile.blog)}" target="_blank" rel="noopener" style="padding:10px 22px;border:1.5px solid ${accent}40;color:${accent};border-radius:10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">&#127758; Website</a>` : ""}
-        <a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" class="about-gh-link" style="padding:10px 22px;border:1.5px solid var(--border,rgba(255,255,255,0.1));color:var(--text,#e8e8ef);border-radius:10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">&#128196; GitHub Profile</a>
+        ${profile.html_url && safeUrl(profile.html_url) !== "#" ? `<a href="${safeUrl(profile.html_url)}" target="_blank" rel="noopener" class="about-gh-link" style="padding:10px 22px;border:1.5px solid var(--border,rgba(255,255,255,0.1));color:var(--text,#e8e8ef);border-radius:10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">GitHub Profile</a>` : ""}
       </div>
     </div>
   </section>`
